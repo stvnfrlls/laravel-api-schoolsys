@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\GradeLevelController;
+use App\Http\Controllers\SectionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,6 +32,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [UserController::class, 'profile']);
     Route::put('/profile', [UserController::class, 'updateProfile']);
+
+    // Read-only: all authenticated roles can view grades and sections
+    Route::get('/grade-levels', [GradeLevelController::class, 'index']);
+    Route::get('/grade-levels/{gradeLevel}', [GradeLevelController::class, 'show']);
+    Route::get('/sections', [SectionController::class, 'index']);
+    Route::get('/sections/{section}', [SectionController::class, 'show']);
 });
 
 // -------------------------------------------------------------------------
@@ -56,6 +64,16 @@ Route::middleware(['auth:sanctum', 'role:sub-admin'])->group(function () {
 });
 
 // -------------------------------------------------------------------------
+// Sub-admin OR Admin — shared section write access (no delete)
+// -------------------------------------------------------------------------
+Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
+    Route::post('/sections', [SectionController::class, 'store']);
+    Route::put('/sections/{section}', [SectionController::class, 'update']);
+    Route::patch('/sections/{section}/activate', [SectionController::class, 'activate']);
+    Route::patch('/sections/{section}/deactivate', [SectionController::class, 'deactivate']);
+});
+
+// -------------------------------------------------------------------------
 // Admin only
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
@@ -76,5 +94,15 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/users/{user}/roles', [RoleController::class, 'assignToUser']);
     Route::put('/users/{user}/roles', [RoleController::class, 'syncUserRoles']);
     Route::delete('/users/{user}/roles/{role}', [RoleController::class, 'removeFromUser']);
+
+    // Grade levels: full control (structural — admin only)
+    Route::post('/grade-levels', [GradeLevelController::class, 'store']);
+    Route::put('/grade-levels/{gradeLevel}', [GradeLevelController::class, 'update']);
+    Route::patch('/grade-levels/{gradeLevel}/activate', [GradeLevelController::class, 'activate']);
+    Route::patch('/grade-levels/{gradeLevel}/deactivate', [GradeLevelController::class, 'deactivate']);
+    Route::delete('/grade-levels/{gradeLevel}', [GradeLevelController::class, 'destroy']);
+
+    // Sections: admin-only delete
+    Route::delete('/sections/{section}', [SectionController::class, 'destroy']);
 
 });
