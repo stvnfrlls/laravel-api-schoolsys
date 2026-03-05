@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class GradeLevel extends Model
 {
@@ -36,5 +37,17 @@ class GradeLevel extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('level');
+    }
+
+    public function subjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'grade_level_subjects')
+            ->withPivot(['units', 'hours_per_week'])
+            ->withTimestamps();
+    }
+
+    public function activeSubjects(): BelongsToMany
+    {
+        return $this->subjects()->where('is_active', true);
     }
 }

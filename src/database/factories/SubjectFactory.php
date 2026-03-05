@@ -1,0 +1,29 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Subject;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Subject>
+ */
+class SubjectFactory extends Factory
+{
+    protected $model = Subject::class;
+
+    public function definition(): array
+    {
+        return [
+            'name' => $this->faker->unique()->words(2, true),
+            'code' => strtoupper($this->faker->unique()->lexify('????')),
+            'description' => $this->faker->optional()->sentence(),
+            'is_active' => true,
+        ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(['is_active' => false]);
+    }
+}

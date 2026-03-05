@@ -3,8 +3,9 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\GradeLevelController;
-use App\Http\Controllers\SectionController;
+use App\Http\Controllers\Api\GradeLevelController;
+use App\Http\Controllers\Api\SectionController;
+use App\Http\Controllers\Api\SubjectController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,6 +39,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/grade-levels/{gradeLevel}', [GradeLevelController::class, 'show']);
     Route::get('/sections', [SectionController::class, 'index']);
     Route::get('/sections/{section}', [SectionController::class, 'show']);
+
+    // Read-only: all authenticated roles can view subjects
+    Route::get('/subjects', [SubjectController::class, 'index']);
+    Route::get('/subjects/{subject}', [SubjectController::class, 'show']);
 });
 
 // -------------------------------------------------------------------------
@@ -105,4 +110,12 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     // Sections: admin-only delete
     Route::delete('/sections/{section}', [SectionController::class, 'destroy']);
 
+    // Subjects
+    Route::post('/subjects', [SubjectController::class, 'store']);
+    Route::put('/subjects/{subject}', [SubjectController::class, 'update']);
+    Route::patch('/subjects/{subject}/activate', [SubjectController::class, 'activate']);
+    Route::patch('/subjects/{subject}/deactivate', [SubjectController::class, 'deactivate']);
+    Route::post('subjects/{subject}/grade-levels', [SubjectController::class, 'assignToGradeLevel']);
+    Route::delete('/subjects/{subject}/grade-levels/{gradeLevel}', [SubjectController::class, 'removeFromGradeLevel']);
+    Route::delete('/subjects/{subject}', [SubjectController::class, 'destroy']);
 });
