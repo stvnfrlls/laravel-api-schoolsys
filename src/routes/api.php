@@ -28,6 +28,8 @@ Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
 // -------------------------------------------------------------------------
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/profile', [UserController::class, 'profile']);
+    Route::put('/profile', [UserController::class, 'updateProfile']);
 });
 
 // -------------------------------------------------------------------------
@@ -49,6 +51,8 @@ Route::middleware(['auth:sanctum', 'role:faculty'])->group(function () {
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:sub-admin'])->group(function () {
     // Add sub-admin routes here
+    Route::get('/users',        [UserController::class, 'index']);
+    Route::get('/users/{user}', [UserController::class, 'show']);
 });
 
 // -------------------------------------------------------------------------
@@ -58,8 +62,11 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     // Full user management
     Route::get('/users', [UserController::class, 'index']);
+    Route::post('/users', [UserController::class, 'store']);
     Route::get('/users/{user}', [UserController::class, 'show']);
     Route::put('/users/{user}', [UserController::class, 'update']);
+    Route::patch('/users/{user}/activate', [UserController::class, 'activate']);
+    Route::patch('/users/{user}/deactivate', [UserController::class, 'deactivate']);
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
     // Role CRUD
