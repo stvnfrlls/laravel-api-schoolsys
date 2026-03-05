@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,20 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// -------------------------------------------------------------------------
+// Public
+// -------------------------------------------------------------------------
+Route::post('/login',           [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
+
+// -------------------------------------------------------------------------
+// Any authenticated user
+// -------------------------------------------------------------------------
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+});
 
 // -------------------------------------------------------------------------
 // Student
