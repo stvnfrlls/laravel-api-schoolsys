@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\GradeLevelController;
 use App\Http\Controllers\Api\SectionController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\SubjectController;
+use App\Http\Controllers\Api\UserAddressController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -49,6 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/enrollments',                    [EnrollmentController::class, 'index']);
     Route::get('/enrollments/{enrollment}',       [EnrollmentController::class, 'show']);
     Route::get('/sections/{section}/enrollments', [EnrollmentController::class, 'bySection']);
+
+    Route::get('/users/{user}/address', [UserAddressController::class, 'show']);
 });
 
 // -------------------------------------------------------------------------
@@ -86,8 +89,11 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
     Route::patch('/sections/{section}/activate', [SectionController::class, 'activate']);
     Route::patch('/sections/{section}/deactivate', [SectionController::class, 'deactivate']);
 
-    Route::post('/enrollments',               [EnrollmentController::class, 'store']);
-    Route::put('/enrollments/{enrollment}',   [EnrollmentController::class, 'update']);
+    Route::post('/enrollments', [EnrollmentController::class, 'store']);
+    Route::put('/enrollments/{enrollment}', [EnrollmentController::class, 'update']);
+
+    Route::post('/users/{user}/address', [UserAddressController::class, 'store']);
+    Route::put('/users/{user}/address', [UserAddressController::class, 'update']);
 });
 
 // -------------------------------------------------------------------------
@@ -132,4 +138,5 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::delete('/subjects/{subject}', [SubjectController::class, 'destroy']);
 
     Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy']);
+    Route::delete('/users/{user}/address', [UserAddressController::class, 'destroy']);
 });
