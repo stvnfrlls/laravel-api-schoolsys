@@ -5,9 +5,11 @@ use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\GradeLevelController;
+use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\SectionController;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\SubjectController;
+use App\Http\Controllers\Api\TeacherController;
 use App\Http\Controllers\Api\UserAddressController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,9 +27,9 @@ use Illuminate\Support\Facades\Route;
 // -------------------------------------------------------------------------
 // Public
 // -------------------------------------------------------------------------
-Route::post('/login',           [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // -------------------------------------------------------------------------
 // Any authenticated user
@@ -47,11 +49,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/subjects', [SubjectController::class, 'index']);
     Route::get('/subjects/{subject}', [SubjectController::class, 'show']);
 
-    Route::get('/enrollments',                    [EnrollmentController::class, 'index']);
-    Route::get('/enrollments/{enrollment}',       [EnrollmentController::class, 'show']);
+    Route::get('/enrollments', [EnrollmentController::class, 'index']);
+    Route::get('/enrollments/{enrollment}', [EnrollmentController::class, 'show']);
     Route::get('/sections/{section}/enrollments', [EnrollmentController::class, 'bySection']);
 
     Route::get('/users/{user}/address', [UserAddressController::class, 'show']);
+
+    Route::get('/schedules', [ScheduleController::class, 'index']);
+    Route::get('/schedules/{schedule}', [ScheduleController::class, 'show']);
+    Route::get('/sections/{section}/schedules', [ScheduleController::class, 'bySection']);
 });
 
 // -------------------------------------------------------------------------
@@ -59,9 +65,9 @@ Route::middleware('auth:sanctum')->group(function () {
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     // Add student routes here
-    Route::get('/students',            [StudentController::class, 'index']);
-    Route::get('/students/{student}',  [StudentController::class, 'show']);
-    Route::put('/students/{student}',  [StudentController::class, 'update']);
+    Route::get('/students', [StudentController::class, 'index']);
+    Route::get('/students/{student}', [StudentController::class, 'show']);
+    Route::put('/students/{student}', [StudentController::class, 'update']);
 });
 
 // -------------------------------------------------------------------------
@@ -76,7 +82,7 @@ Route::middleware(['auth:sanctum', 'role:faculty'])->group(function () {
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:sub-admin'])->group(function () {
     // Add sub-admin routes here
-    Route::get('/users',        [UserController::class, 'index']);
+    Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/{user}', [UserController::class, 'show']);
 });
 
@@ -94,6 +100,13 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
 
     Route::post('/users/{user}/address', [UserAddressController::class, 'store']);
     Route::put('/users/{user}/address', [UserAddressController::class, 'update']);
+
+    Route::get('/teachers',           [TeacherController::class, 'index']);
+    Route::get('/teachers/{teacher}', [TeacherController::class, 'show']);
+    Route::put('/teachers/{teacher}', [TeacherController::class, 'update']);
+
+    Route::post('/schedules', [ScheduleController::class, 'store']);
+    Route::put('/schedules/{schedule}', [ScheduleController::class, 'update']);
 });
 
 // -------------------------------------------------------------------------
@@ -139,4 +152,5 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy']);
     Route::delete('/users/{user}/address', [UserAddressController::class, 'destroy']);
+    Route::delete('/schedules/{schedule}',            [ScheduleController::class, 'destroy']);
 });
