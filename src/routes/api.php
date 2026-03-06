@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\GradingComponentController;
@@ -66,6 +67,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/grading-components/{gradingComponent}', [GradingComponentController::class, 'show']);
     Route::get('/student-grades', [StudentGradeController::class, 'index']);
     Route::get('/student-grades/{studentGrade}', [StudentGradeController::class, 'show']);
+
+    Route::get('/attendance', [AttendanceController::class, 'index']);
+    Route::get('/attendance/flagged', [AttendanceController::class, 'flagged']);
+    Route::get('/attendance/summary/{enrollment}', [AttendanceController::class, 'summary']);
+    Route::get('/attendance/{attendance}', [AttendanceController::class, 'show']);
+
 });
 
 // -------------------------------------------------------------------------
@@ -84,6 +91,10 @@ Route::middleware(['auth:sanctum', 'role:faculty'])->group(function () {
     // Faculty can input and update student grades for their assigned subjects
     Route::post('/student-grades', [StudentGradeController::class, 'store']);
     Route::put('/student-grades/{studentGrade}', [StudentGradeController::class, 'update']);
+
+    Route::post('/attendance', [AttendanceController::class, 'store']);
+    Route::put('/attendance/{attendance}', [AttendanceController::class, 'update']);
+
 });
 
 // -------------------------------------------------------------------------
@@ -119,6 +130,10 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
     // Sub-admin and admin can also input/update student grades
     Route::post('/student-grades', [StudentGradeController::class, 'store']);
     Route::put('/student-grades/{studentGrade}', [StudentGradeController::class, 'update']);
+
+    Route::post('/attendance', [AttendanceController::class, 'store']);
+    Route::put('/attendance/{attendance}', [AttendanceController::class, 'update']);
+
 });
 
 // -------------------------------------------------------------------------
@@ -173,4 +188,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     // Student grades: admin-only delete
     Route::delete('/student-grades/{studentGrade}', [StudentGradeController::class, 'destroy']);
+
+    Route::delete('/attendance/{attendance}', [AttendanceController::class, 'destroy']);
+
 });
