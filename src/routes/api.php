@@ -79,22 +79,33 @@ Route::middleware('auth:sanctum')->group(function () {
 // Student
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
+    // Admin-managed student routes (already existed)
     Route::get('/students', [StudentController::class, 'index']);
     Route::get('/students/{student}', [StudentController::class, 'show']);
     Route::put('/students/{student}', [StudentController::class, 'update']);
+
+    // Student self-service (new)
+    Route::get('/student/profile', [StudentController::class, 'myProfile']);
+    Route::get('/student/schedule', [StudentController::class, 'mySchedule']);
+    Route::get('/student/grades', [StudentController::class, 'myGrades']);
+    Route::get('/student/attendance', [StudentController::class, 'myAttendance']);
 });
 
 // -------------------------------------------------------------------------
 // Faculty
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:faculty'])->group(function () {
-    // Faculty can input and update student grades for their assigned subjects
+    // Grade input (already existed)
     Route::post('/student-grades', [StudentGradeController::class, 'store']);
     Route::put('/student-grades/{studentGrade}', [StudentGradeController::class, 'update']);
 
+    // Attendance input (already existed)
     Route::post('/attendance', [AttendanceController::class, 'store']);
     Route::put('/attendance/{attendance}', [AttendanceController::class, 'update']);
 
+    // Teacher self-service (new)
+    Route::get('/teacher/schedule', [TeacherController::class, 'mySchedule']);
+    Route::get('/teacher/subjects', [TeacherController::class, 'mySubjects']);
 });
 
 // -------------------------------------------------------------------------
