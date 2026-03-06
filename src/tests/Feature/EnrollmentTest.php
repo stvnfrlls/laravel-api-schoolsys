@@ -36,16 +36,18 @@ class EnrollmentTest extends TestCase
      * the Student profile. We do NOT rely on any observer or side effect
      * of assignRole() since that varies by implementation.
      */
-    private function makeStudent(): Student
+    private function makeStudent(): User
     {
         $user = User::factory()->create();
         $user->assignRole('student');
 
-        return Student::factory()->create(['user_id' => $user->id]);
+        return $user;
     }
 
-    private function enrollmentPayload(Section $section, Student $student, array $overrides = []): array
+    private function enrollmentPayload(Section $section, User $user, array $overrides = []): array
     {
+        $student = $user->student; // get the observer-created student
+
         return array_merge([
             'student_id' => $student->id,            // students.id — NOT users.id
             'section_id' => $section->id,
@@ -62,10 +64,11 @@ class EnrollmentTest extends TestCase
     public function test_admin_can_enroll_a_student(): void
     {
         $section = $this->makeSection();
-        $student = $this->makeStudent();
+        $user = $this->makeStudent();
+        $student = $user->student;
 
         $response = $this->actingAsRole('admin')
-            ->postJson('/api/enrollments', $this->enrollmentPayload($section, $student));
+            ->postJson('/api/enrollments', $this->enrollmentPayload($section, $user));
 
         $response->assertCreated()
             ->assertJsonPath('status', 'active')
