@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\GradingComponentController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\StudentGradeController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\GradeLevelController;
 use App\Http\Controllers\Api\ScheduleController;
@@ -58,13 +60,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/schedules', [ScheduleController::class, 'index']);
     Route::get('/schedules/{schedule}', [ScheduleController::class, 'show']);
     Route::get('/sections/{section}/schedules', [ScheduleController::class, 'bySection']);
+
+    // Read-only: all authenticated roles can view grading components and student grades
+    Route::get('/grading-components', [GradingComponentController::class, 'index']);
+    Route::get('/grading-components/{gradingComponent}', [GradingComponentController::class, 'show']);
+    Route::get('/student-grades', [StudentGradeController::class, 'index']);
+    Route::get('/student-grades/{studentGrade}', [StudentGradeController::class, 'show']);
 });
 
 // -------------------------------------------------------------------------
 // Student
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
-    // Add student routes here
     Route::get('/students', [StudentController::class, 'index']);
     Route::get('/students/{student}', [StudentController::class, 'show']);
     Route::put('/students/{student}', [StudentController::class, 'update']);
@@ -74,14 +81,15 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
 // Faculty
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:faculty'])->group(function () {
-    // Add faculty routes here
+    // Faculty can input and update student grades for their assigned subjects
+    Route::post('/student-grades', [StudentGradeController::class, 'store']);
+    Route::put('/student-grades/{studentGrade}', [StudentGradeController::class, 'update']);
 });
 
 // -------------------------------------------------------------------------
 // Sub-admin
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:sub-admin'])->group(function () {
-    // Add sub-admin routes here
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/{user}', [UserController::class, 'show']);
 });
@@ -101,12 +109,16 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
     Route::post('/users/{user}/address', [UserAddressController::class, 'store']);
     Route::put('/users/{user}/address', [UserAddressController::class, 'update']);
 
-    Route::get('/teachers',           [TeacherController::class, 'index']);
+    Route::get('/teachers', [TeacherController::class, 'index']);
     Route::get('/teachers/{teacher}', [TeacherController::class, 'show']);
     Route::put('/teachers/{teacher}', [TeacherController::class, 'update']);
 
     Route::post('/schedules', [ScheduleController::class, 'store']);
     Route::put('/schedules/{schedule}', [ScheduleController::class, 'update']);
+
+    // Sub-admin and admin can also input/update student grades
+    Route::post('/student-grades', [StudentGradeController::class, 'store']);
+    Route::put('/student-grades/{studentGrade}', [StudentGradeController::class, 'update']);
 });
 
 // -------------------------------------------------------------------------
@@ -152,5 +164,13 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy']);
     Route::delete('/users/{user}/address', [UserAddressController::class, 'destroy']);
-    Route::delete('/schedules/{schedule}',            [ScheduleController::class, 'destroy']);
+    Route::delete('/schedules/{schedule}', [ScheduleController::class, 'destroy']);
+
+    // Grading components: structural config — admin only for full control
+    Route::post('/grading-components', [GradingComponentController::class, 'store']);
+    Route::put('/grading-components/{gradingComponent}', [GradingComponentController::class, 'update']);
+    Route::delete('/grading-components/{gradingComponent}', [GradingComponentController::class, 'destroy']);
+
+    // Student grades: admin-only delete
+    Route::delete('/student-grades/{studentGrade}', [StudentGradeController::class, 'destroy']);
 });
