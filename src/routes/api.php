@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\GradeLevelController;
 use App\Http\Controllers\Api\SectionController;
+use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\SubjectController;
 use Illuminate\Support\Facades\Route;
 
@@ -43,6 +45,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Read-only: all authenticated roles can view subjects
     Route::get('/subjects', [SubjectController::class, 'index']);
     Route::get('/subjects/{subject}', [SubjectController::class, 'show']);
+
+    Route::get('/enrollments',                    [EnrollmentController::class, 'index']);
+    Route::get('/enrollments/{enrollment}',       [EnrollmentController::class, 'show']);
+    Route::get('/sections/{section}/enrollments', [EnrollmentController::class, 'bySection']);
 });
 
 // -------------------------------------------------------------------------
@@ -50,6 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     // Add student routes here
+    Route::get('/students',            [StudentController::class, 'index']);
+    Route::get('/students/{student}',  [StudentController::class, 'show']);
+    Route::put('/students/{student}',  [StudentController::class, 'update']);
 });
 
 // -------------------------------------------------------------------------
@@ -76,6 +85,9 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
     Route::put('/sections/{section}', [SectionController::class, 'update']);
     Route::patch('/sections/{section}/activate', [SectionController::class, 'activate']);
     Route::patch('/sections/{section}/deactivate', [SectionController::class, 'deactivate']);
+
+    Route::post('/enrollments',               [EnrollmentController::class, 'store']);
+    Route::put('/enrollments/{enrollment}',   [EnrollmentController::class, 'update']);
 });
 
 // -------------------------------------------------------------------------
@@ -118,4 +130,6 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('subjects/{subject}/grade-levels', [SubjectController::class, 'assignToGradeLevel']);
     Route::delete('/subjects/{subject}/grade-levels/{gradeLevel}', [SubjectController::class, 'removeFromGradeLevel']);
     Route::delete('/subjects/{subject}', [SubjectController::class, 'destroy']);
+
+    Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy']);
 });
