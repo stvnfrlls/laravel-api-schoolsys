@@ -49,4 +49,9 @@ class Section extends Model
     {
         return $this->hasMany(Enrollment::class)->where('status', 'active');
     }
+
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(Schedule::class);
+    }
 }

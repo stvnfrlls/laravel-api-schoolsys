@@ -3,7 +3,10 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -61,10 +64,32 @@ class User extends Authenticatable
         return $this->roles->whereIn('name', $roles)->isNotEmpty();
     }
 
-    public function assignRole(string $roleName): void
+    public function assignRole(...$roles): static
     {
-        $role = Role::firstOrCreate(['name' => $roleName]);
-        $this->roles()->syncWithoutDetaching($role);
+        foreach ($roles as $roleName) {
+            $role = Role::firstOrCreate(['name' => $roleName]);
+            $this->roles()->syncWithoutDetaching([$role->id]);
+        }
+
+        if ($this->hasRole('student') && !$this->student()->exists()) {
+            Student::create([
+                'user_id' => $this->id,
+                'student_number' => 'STU-' . strtoupper(substr(md5($this->id . now()), 0, 8)),
+                'date_of_birth' => Carbon::now()->subYears(18)->toDateString(),
+                'gender' => 'other',
+            ]);
+        }
+
+        if ($this->hasRole('faculty') && !$this->teacher()->exists()) {
+            Teacher::create([
+                'user_id' => $this->id,
+                'employee_number' => 'EMP-' . strtoupper(substr(md5($this->id . now()), 0, 8)),
+                'date_of_birth' => Carbon::now()->subYears(30)->toDateString(),
+                'gender' => 'other',
+            ]);
+        }
+
+        return $this;
     }
 
     public function removeRole(string $roleName): void
@@ -83,5 +108,15 @@ class User extends Authenticatable
     public function address(): HasOne
     {
         return $this->hasOne(UserAddress::class);
+    }
+
+    public function teacher(): HasOne
+    {
+        return $this->hasOne(Teacher::class);
+    }
+
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(Schedule::class, 'teacher_id');
     }
 }
