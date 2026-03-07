@@ -49,11 +49,27 @@ class UserControllerTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'john@example.com']);
     }
 
+    public function test_admin_can_create_a_user_without_name(): void
+    {
+        $admin = $this->createUserWithRole('admin');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/users', [
+                'email' => 'noname@example.com',
+                'password' => 'password123',
+                'role' => 'student',
+            ])
+            ->assertCreated()
+            ->assertJsonFragment(['email' => 'noname@example.com']);
+
+        $this->assertDatabaseHas('users', ['email' => 'noname@example.com', 'name' => null]);
+    }
+
     public function test_new_user_gets_unassigned_role_by_default(): void
     {
         $admin = $this->createUserWithRole('admin');
 
-        $response = $this->actingAs($admin, 'sanctum')
+        $this->actingAs($admin, 'sanctum')
             ->postJson('/api/users', [
                 'name' => 'Jane Doe',
                 'email' => 'jane@example.com',
@@ -65,20 +81,22 @@ class UserControllerTest extends TestCase
         $this->assertTrue($user->load('roles')->hasRole('unassigned'));
     }
 
-    public function test_create_user_requires_name_email_password(): void
+    // name is now nullable — only email and password are required
+    public function test_create_user_requires_email_and_password(): void
     {
         $admin = $this->createUserWithRole('admin');
 
         $this->actingAs($admin, 'sanctum')
             ->postJson('/api/users', [])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name', 'email', 'password']);
+            ->assertJsonValidationErrors(['email', 'password'])
+            ->assertJsonMissingValidationErrors(['name']); // name is now optional
     }
 
     public function test_create_user_rejects_duplicate_email(): void
     {
         $admin = $this->createUserWithRole('admin');
-        $existing = User::factory()->create(['email' => 'taken@example.com']);
+        User::factory()->create(['email' => 'taken@example.com']);
 
         $this->actingAs($admin, 'sanctum')
             ->postJson('/api/users', [
@@ -132,11 +150,23 @@ class UserControllerTest extends TestCase
             ->assertJsonFragment(['name' => 'Updated Name', 'email' => 'updated@example.com']);
     }
 
+    public function test_admin_can_set_user_name_to_null(): void
+    {
+        $admin = $this->createUserWithRole('admin');
+        $target = $this->createUserWithRole('student');
+
+        $this->actingAs($admin, 'sanctum')
+            ->putJson("/api/users/{$target->id}", ['name' => null])
+            ->assertOk();
+
+        $this->assertNull($target->fresh()->name);
+    }
+
     public function test_update_rejects_duplicate_email(): void
     {
         $admin = $this->createUserWithRole('admin');
         $target = $this->createUserWithRole('student');
-        $another = User::factory()->create(['email' => 'taken@example.com']);
+        User::factory()->create(['email' => 'taken@example.com']);
 
         $this->actingAs($admin, 'sanctum')
             ->putJson("/api/users/{$target->id}", ['email' => 'taken@example.com'])
@@ -268,6 +298,17 @@ class UserControllerTest extends TestCase
             ->assertJsonFragment(['name' => 'New Name']);
 
         $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'New Name']);
+    }
+
+    public function test_user_can_clear_own_name(): void
+    {
+        $user = $this->createUserWithRole('student');
+
+        $this->actingAs($user, 'sanctum')
+            ->putJson('/api/profile', ['name' => null])
+            ->assertOk();
+
+        $this->assertNull($user->fresh()->name);
     }
 
     public function test_user_cannot_update_their_own_role_via_profile(): void

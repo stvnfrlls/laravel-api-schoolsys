@@ -68,6 +68,19 @@ class TeacherTest extends TestCase
         );
     }
 
+    public function test_auto_created_teacher_has_placeholder_names(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('faculty');
+
+        $teacher = $user->fresh()->teacher;
+
+        $this->assertEquals('Unknown', $teacher->first_name);
+        $this->assertEquals('Unknown', $teacher->last_name);
+        $this->assertNull($teacher->middle_name);
+        $this->assertNull($teacher->suffix);
+    }
+
     // =========================================================================
     // GET /teachers
     // =========================================================================
@@ -117,6 +130,16 @@ class TeacherTest extends TestCase
             ->assertJsonPath('id', $teacher->id);
     }
 
+    public function test_teacher_response_includes_name_fields(): void
+    {
+        $teacher = $this->makeTeacher();
+
+        $this->actingAsRole('admin')
+            ->getJson("/api/teachers/{$teacher->id}")
+            ->assertOk()
+            ->assertJsonStructure(['id', 'first_name', 'last_name', 'middle_name', 'suffix']);
+    }
+
     public function test_sub_admin_can_view_a_teacher(): void
     {
         $teacher = $this->makeTeacher();
@@ -144,6 +167,45 @@ class TeacherTest extends TestCase
             ->assertJsonPath('date_of_birth', '1990-05-15');
     }
 
+    public function test_admin_can_update_teacher_name_fields(): void
+    {
+        $teacher = $this->makeTeacher();
+
+        $this->actingAsRole('admin')
+            ->putJson("/api/teachers/{$teacher->id}", [
+                'first_name' => 'Maria',
+                'last_name' => 'Santos',
+                'middle_name' => 'Cruz',
+                'suffix' => null,
+            ])
+            ->assertOk()
+            ->assertJsonPath('first_name', 'Maria')
+            ->assertJsonPath('last_name', 'Santos')
+            ->assertJsonPath('middle_name', 'Cruz')
+            ->assertJsonPath('suffix', null);
+
+        $this->assertDatabaseHas('teachers', [
+            'id' => $teacher->id,
+            'first_name' => 'Maria',
+            'last_name' => 'Santos',
+            'middle_name' => 'Cruz',
+        ]);
+    }
+
+    public function test_admin_can_update_teacher_with_suffix(): void
+    {
+        $teacher = $this->makeTeacher();
+
+        $this->actingAsRole('admin')
+            ->putJson("/api/teachers/{$teacher->id}", [
+                'first_name' => 'Jose',
+                'last_name' => 'Reyes',
+                'suffix' => 'Jr.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('suffix', 'Jr.');
+    }
+
     public function test_sub_admin_can_update_teacher_profile(): void
     {
         $teacher = $this->makeTeacher();
@@ -161,7 +223,7 @@ class TeacherTest extends TestCase
 
         $this->actingAsRole('admin')
             ->putJson("/api/teachers/{$teacher2->id}", [
-                'employee_number' => $teacher1->employee_number, // taken
+                'employee_number' => $teacher1->employee_number,
             ])
             ->assertUnprocessable();
     }

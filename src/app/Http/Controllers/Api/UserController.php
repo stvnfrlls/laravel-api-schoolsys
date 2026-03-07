@@ -25,14 +25,14 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'max:255'], // was 'required'
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'role' => ['sometimes', 'string', 'exists:roles,name'],
         ]);
 
         $user = User::create([
-            'name' => $data['name'],
+            'name' => $data['name'] ?? null, // was $data['name'] — would error if absent
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'is_active' => true,
@@ -60,7 +60,7 @@ class UserController extends Controller
     public function update(Request $request, User $user): JsonResponse
     {
         $data = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
+            'name' => ['sometimes', 'nullable', 'string', 'max:255'], // added 'nullable'
             'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
         ]);
 
@@ -140,7 +140,7 @@ class UserController extends Controller
         $user = $request->user();
 
         $data = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
+            'name' => ['sometimes', 'nullable', 'string', 'max:255'], // added 'nullable'
             'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
         ]);
 

@@ -16,11 +16,6 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -28,21 +23,11 @@ class User extends Authenticatable
         'is_active',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
@@ -75,6 +60,8 @@ class User extends Authenticatable
             Student::create([
                 'user_id' => $this->id,
                 'student_number' => 'STU-' . strtoupper(substr(md5($this->id . now()), 0, 8)),
+                'first_name' => 'Unknown',
+                'last_name' => 'Unknown',
                 'date_of_birth' => Carbon::now()->subYears(18)->toDateString(),
                 'gender' => 'other',
             ]);
@@ -84,6 +71,8 @@ class User extends Authenticatable
             Teacher::create([
                 'user_id' => $this->id,
                 'employee_number' => 'EMP-' . strtoupper(substr(md5($this->id . now()), 0, 8)),
+                'first_name' => 'Unknown',
+                'last_name' => 'Unknown',
                 'date_of_birth' => Carbon::now()->subYears(30)->toDateString(),
                 'gender' => 'other',
             ]);

@@ -37,13 +37,13 @@ class TeacherStudentSideTest extends TestCase
         // --- Teacher ---
         $this->teacherUser = User::factory()->create();
         $this->teacherUser->assignRole('faculty');
-        // assignRole('faculty') auto-creates the Teacher record
+        // assignRole('faculty') auto-creates the Teacher record with placeholder names
         $this->teacher = $this->teacherUser->teacher()->first();
 
         // --- Student ---
         $this->studentUser = User::factory()->create();
         $this->studentUser->assignRole('student');
-        // assignRole('student') auto-creates the Student record
+        // assignRole('student') auto-creates the Student record with placeholder names
         $this->student = $this->studentUser->student()->first();
 
         // --- Curriculum ---
@@ -74,17 +74,15 @@ class TeacherStudentSideTest extends TestCase
             'subject_id' => $this->subject->id,
         ]);
 
-        $response = $this->actingAs($this->teacherUser)
-            ->getJson('/api/teacher/schedule');
-
-        $response->assertStatus(200)
+        $this->actingAs($this->teacherUser)
+            ->getJson('/api/teacher/schedule')
+            ->assertStatus(200)
             ->assertJsonCount(1)
             ->assertJsonFragment(['id' => $this->subject->id]);
     }
 
     public function test_teacher_schedule_only_shows_own_classes(): void
     {
-        // Another teacher
         $otherUser = User::factory()->create();
         $otherUser->assignRole('faculty');
 
@@ -100,11 +98,10 @@ class TeacherStudentSideTest extends TestCase
             'subject_id' => Subject::factory()->create()->id,
         ]);
 
-        $response = $this->actingAs($this->teacherUser)
-            ->getJson('/api/teacher/schedule');
-
-        $response->assertStatus(200)
-            ->assertJsonCount(1); // Only their own schedule
+        $this->actingAs($this->teacherUser)
+            ->getJson('/api/teacher/schedule')
+            ->assertStatus(200)
+            ->assertJsonCount(1);
     }
 
     public function test_teacher_can_filter_schedule_by_day(): void
@@ -113,20 +110,19 @@ class TeacherStudentSideTest extends TestCase
             'teacher_id' => $this->teacherUser->id,
             'section_id' => $this->section->id,
             'subject_id' => $this->subject->id,
-            'day' => 'monday',                          // lowercase — matches enum
+            'day' => 'monday',
         ]);
 
         Schedule::factory()->create([
             'teacher_id' => $this->teacherUser->id,
             'section_id' => $this->section->id,
             'subject_id' => Subject::factory()->create()->id,
-            'day' => 'wednesday',                       // lowercase — matches enum
+            'day' => 'wednesday',
         ]);
 
-        $response = $this->actingAs($this->teacherUser)
-            ->getJson('/api/teacher/schedule?day=monday');
-
-        $response->assertStatus(200)
+        $this->actingAs($this->teacherUser)
+            ->getJson('/api/teacher/schedule?day=monday')
+            ->assertStatus(200)
             ->assertJsonCount(1)
             ->assertJsonFragment(['day' => 'monday']);
     }
@@ -144,14 +140,12 @@ class TeacherStudentSideTest extends TestCase
             'subject_id' => $this->subject->id,
         ]);
 
-        // Same subject, different section
         Schedule::factory()->create([
             'teacher_id' => $this->teacherUser->id,
             'section_id' => $sectionB->id,
             'subject_id' => $this->subject->id,
         ]);
 
-        // Entirely different subject
         Schedule::factory()->create([
             'teacher_id' => $this->teacherUser->id,
             'section_id' => $this->section->id,
@@ -162,9 +156,8 @@ class TeacherStudentSideTest extends TestCase
             ->getJson('/api/teacher/subjects');
 
         $response->assertStatus(200)
-            ->assertJsonCount(2); // 2 distinct subjects
+            ->assertJsonCount(2);
 
-        // First subject should have 2 sections
         $data = $response->json();
         $subjectEntry = collect($data)->firstWhere('subject.id', $this->subject->id);
         $this->assertCount(2, $subjectEntry['sections']);
@@ -187,12 +180,27 @@ class TeacherStudentSideTest extends TestCase
 
     public function test_student_can_view_own_profile(): void
     {
-        $response = $this->actingAs($this->studentUser)
-            ->getJson('/api/student/profile');
-
-        $response->assertStatus(200)
+        $this->actingAs($this->studentUser)
+            ->getJson('/api/student/profile')
+            ->assertStatus(200)
             ->assertJsonFragment(['id' => $this->student->id])
             ->assertJsonPath('active_enrollment.id', $this->enrollment->id);
+    }
+
+    public function test_student_profile_includes_name_fields(): void
+    {
+        $this->actingAs($this->studentUser)
+            ->getJson('/api/student/profile')
+            ->assertStatus(200)
+            ->assertJsonStructure(['id', 'first_name', 'last_name', 'middle_name', 'suffix']);
+    }
+
+    public function test_auto_created_student_has_placeholder_names(): void
+    {
+        $this->assertEquals('Unknown', $this->student->first_name);
+        $this->assertEquals('Unknown', $this->student->last_name);
+        $this->assertNull($this->student->middle_name);
+        $this->assertNull($this->student->suffix);
     }
 
     // ── mySchedule ───────────────────────────────────────────────────
@@ -205,17 +213,15 @@ class TeacherStudentSideTest extends TestCase
             'subject_id' => $this->subject->id,
         ]);
 
-        $response = $this->actingAs($this->studentUser)
-            ->getJson('/api/student/schedule');
-
-        $response->assertStatus(200)
+        $this->actingAs($this->studentUser)
+            ->getJson('/api/student/schedule')
+            ->assertStatus(200)
             ->assertJsonCount(1)
             ->assertJsonFragment(['id' => $this->subject->id]);
     }
 
     public function test_student_with_no_active_enrollment_gets_404_on_schedule(): void
     {
-        // 'inactive' is not a valid status — use 'dropped' instead
         $this->enrollment->update(['status' => 'dropped']);
 
         $this->actingAs($this->studentUser)
@@ -244,11 +250,10 @@ class TeacherStudentSideTest extends TestCase
             'is_failing' => false,
         ]);
 
-        $response = $this->actingAs($this->studentUser)
-            ->getJson('/api/student/grades');
-
-        $response->assertStatus(200)
-            ->assertJsonCount(1) // 1 subject group
+        $this->actingAs($this->studentUser)
+            ->getJson('/api/student/grades')
+            ->assertStatus(200)
+            ->assertJsonCount(1)
             ->assertJsonFragment(['id' => $this->subject->id]);
     }
 
@@ -293,7 +298,6 @@ class TeacherStudentSideTest extends TestCase
 
     public function test_student_cannot_see_other_students_grades(): void
     {
-        // Another student's enrollment and grade
         $otherUser = User::factory()->create();
         $otherUser->assignRole('student');
         $otherStudent = $otherUser->student()->first();
@@ -320,11 +324,9 @@ class TeacherStudentSideTest extends TestCase
             'is_failing' => false,
         ]);
 
-        $response = $this->actingAs($this->studentUser)
-            ->getJson('/api/student/grades');
-
-        // Own student has no grades — should return empty
-        $response->assertStatus(200)
+        $this->actingAs($this->studentUser)
+            ->getJson('/api/student/grades')
+            ->assertStatus(200)
             ->assertJsonCount(0);
     }
 
@@ -344,10 +346,9 @@ class TeacherStudentSideTest extends TestCase
             'date' => '2026-03-02',
         ]);
 
-        $response = $this->actingAs($this->studentUser)
-            ->getJson('/api/student/attendance');
-
-        $response->assertStatus(200)
+        $this->actingAs($this->studentUser)
+            ->getJson('/api/student/attendance')
+            ->assertStatus(200)
             ->assertJsonPath('summary.total', 2)
             ->assertJsonPath('summary.present', 1)
             ->assertJsonPath('summary.absent', 1)
@@ -364,10 +365,9 @@ class TeacherStudentSideTest extends TestCase
             ]);
         }
 
-        $response = $this->actingAs($this->studentUser)
-            ->getJson('/api/student/attendance');
-
-        $response->assertStatus(200)
+        $this->actingAs($this->studentUser)
+            ->getJson('/api/student/attendance')
+            ->assertStatus(200)
             ->assertJsonPath('summary.is_flagged', true);
     }
 
@@ -389,10 +389,9 @@ class TeacherStudentSideTest extends TestCase
             'date' => '2026-03-01',
         ]);
 
-        $response = $this->actingAs($this->studentUser)
-            ->getJson('/api/student/attendance');
-
-        $response->assertStatus(200)
+        $this->actingAs($this->studentUser)
+            ->getJson('/api/student/attendance')
+            ->assertStatus(200)
             ->assertJsonPath('summary.total', 0)
             ->assertJsonCount(0, 'records');
     }
