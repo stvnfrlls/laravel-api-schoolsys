@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => ['https://schoolsys-six.vercel.app/login', 'http://localhost:5173'],
 
     'allowed_origins_patterns' => [],
 
