@@ -14,12 +14,16 @@ class Student extends Model
     protected $fillable = [
         'user_id',
         'student_number',
+        'first_name',
+        'last_name',
+        'middle_name',
+        'suffix',
         'date_of_birth',
         'gender',
     ];
 
     protected $casts = [
-        'date_of_birth' => 'date',
+        'date_of_birth' => 'date:Y-m-d',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────

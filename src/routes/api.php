@@ -16,17 +16,6 @@ use App\Http\Controllers\Api\TeacherController;
 use App\Http\Controllers\Api\UserAddressController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
-
 // -------------------------------------------------------------------------
 // Public
 // -------------------------------------------------------------------------
@@ -42,13 +31,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [UserController::class, 'profile']);
     Route::put('/profile', [UserController::class, 'updateProfile']);
 
-    // Read-only: all authenticated roles can view grades and sections
     Route::get('/grade-levels', [GradeLevelController::class, 'index']);
     Route::get('/grade-levels/{gradeLevel}', [GradeLevelController::class, 'show']);
     Route::get('/sections', [SectionController::class, 'index']);
     Route::get('/sections/{section}', [SectionController::class, 'show']);
 
-    // Read-only: all authenticated roles can view subjects
     Route::get('/subjects', [SubjectController::class, 'index']);
     Route::get('/subjects/{subject}', [SubjectController::class, 'show']);
 
@@ -62,7 +49,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/schedules/{schedule}', [ScheduleController::class, 'show']);
     Route::get('/sections/{section}/schedules', [ScheduleController::class, 'bySection']);
 
-    // Read-only: all authenticated roles can view grading components and student grades
     Route::get('/grading-components', [GradingComponentController::class, 'index']);
     Route::get('/grading-components/{gradingComponent}', [GradingComponentController::class, 'show']);
     Route::get('/student-grades', [StudentGradeController::class, 'index']);
@@ -72,19 +58,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance/flagged', [AttendanceController::class, 'flagged']);
     Route::get('/attendance/summary/{enrollment}', [AttendanceController::class, 'summary']);
     Route::get('/attendance/{attendance}', [AttendanceController::class, 'show']);
-
 });
 
 // -------------------------------------------------------------------------
-// Student
+// Student self-service only (role: student)
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
-    // Admin-managed student routes (already existed)
-    Route::get('/students', [StudentController::class, 'index']);
-    Route::get('/students/{student}', [StudentController::class, 'show']);
-    Route::put('/students/{student}', [StudentController::class, 'update']);
-
-    // Student self-service (new)
     Route::get('/student/profile', [StudentController::class, 'myProfile']);
     Route::get('/student/schedule', [StudentController::class, 'mySchedule']);
     Route::get('/student/grades', [StudentController::class, 'myGrades']);
@@ -92,24 +71,21 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
 });
 
 // -------------------------------------------------------------------------
-// Faculty
+// Faculty self-service (role: faculty)
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:faculty'])->group(function () {
-    // Grade input (already existed)
     Route::post('/student-grades', [StudentGradeController::class, 'store']);
     Route::put('/student-grades/{studentGrade}', [StudentGradeController::class, 'update']);
 
-    // Attendance input (already existed)
     Route::post('/attendance', [AttendanceController::class, 'store']);
     Route::put('/attendance/{attendance}', [AttendanceController::class, 'update']);
 
-    // Teacher self-service (new)
     Route::get('/teacher/schedule', [TeacherController::class, 'mySchedule']);
     Route::get('/teacher/subjects', [TeacherController::class, 'mySubjects']);
 });
 
 // -------------------------------------------------------------------------
-// Sub-admin
+// Sub-admin only
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:sub-admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
@@ -117,7 +93,7 @@ Route::middleware(['auth:sanctum', 'role:sub-admin'])->group(function () {
 });
 
 // -------------------------------------------------------------------------
-// Sub-admin OR Admin — shared section write access (no delete)
+// Sub-admin OR Admin
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
     Route::post('/sections', [SectionController::class, 'store']);
@@ -131,6 +107,11 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
     Route::post('/users/{user}/address', [UserAddressController::class, 'store']);
     Route::put('/users/{user}/address', [UserAddressController::class, 'update']);
 
+    // Student management — mirrors teacher management
+    Route::get('/students', [StudentController::class, 'index']);
+    Route::get('/students/{student}', [StudentController::class, 'show']);
+    Route::put('/students/{student}', [StudentController::class, 'update']);
+
     Route::get('/teachers', [TeacherController::class, 'index']);
     Route::get('/teachers/{teacher}', [TeacherController::class, 'show']);
     Route::put('/teachers/{teacher}', [TeacherController::class, 'update']);
@@ -138,21 +119,17 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
     Route::post('/schedules', [ScheduleController::class, 'store']);
     Route::put('/schedules/{schedule}', [ScheduleController::class, 'update']);
 
-    // Sub-admin and admin can also input/update student grades
     Route::post('/student-grades', [StudentGradeController::class, 'store']);
     Route::put('/student-grades/{studentGrade}', [StudentGradeController::class, 'update']);
 
     Route::post('/attendance', [AttendanceController::class, 'store']);
     Route::put('/attendance/{attendance}', [AttendanceController::class, 'update']);
-
 });
 
 // -------------------------------------------------------------------------
 // Admin only
 // -------------------------------------------------------------------------
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-
-    // Full user management
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
     Route::get('/users/{user}', [UserController::class, 'show']);
@@ -161,25 +138,19 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::patch('/users/{user}/deactivate', [UserController::class, 'deactivate']);
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
-    // Role CRUD
     Route::apiResource('roles', RoleController::class);
-
-    // Assign / remove / sync roles on a user
     Route::post('/users/{user}/roles', [RoleController::class, 'assignToUser']);
     Route::put('/users/{user}/roles', [RoleController::class, 'syncUserRoles']);
     Route::delete('/users/{user}/roles/{role}', [RoleController::class, 'removeFromUser']);
 
-    // Grade levels: full control (structural — admin only)
     Route::post('/grade-levels', [GradeLevelController::class, 'store']);
     Route::put('/grade-levels/{gradeLevel}', [GradeLevelController::class, 'update']);
     Route::patch('/grade-levels/{gradeLevel}/activate', [GradeLevelController::class, 'activate']);
     Route::patch('/grade-levels/{gradeLevel}/deactivate', [GradeLevelController::class, 'deactivate']);
     Route::delete('/grade-levels/{gradeLevel}', [GradeLevelController::class, 'destroy']);
 
-    // Sections: admin-only delete
     Route::delete('/sections/{section}', [SectionController::class, 'destroy']);
 
-    // Subjects
     Route::post('/subjects', [SubjectController::class, 'store']);
     Route::put('/subjects/{subject}', [SubjectController::class, 'update']);
     Route::patch('/subjects/{subject}/activate', [SubjectController::class, 'activate']);
@@ -192,14 +163,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::delete('/users/{user}/address', [UserAddressController::class, 'destroy']);
     Route::delete('/schedules/{schedule}', [ScheduleController::class, 'destroy']);
 
-    // Grading components: structural config — admin only for full control
     Route::post('/grading-components', [GradingComponentController::class, 'store']);
     Route::put('/grading-components/{gradingComponent}', [GradingComponentController::class, 'update']);
     Route::delete('/grading-components/{gradingComponent}', [GradingComponentController::class, 'destroy']);
 
-    // Student grades: admin-only delete
     Route::delete('/student-grades/{studentGrade}', [StudentGradeController::class, 'destroy']);
-
     Route::delete('/attendance/{attendance}', [AttendanceController::class, 'destroy']);
-
 });

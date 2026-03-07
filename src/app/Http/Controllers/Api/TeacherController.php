@@ -32,6 +32,10 @@ class TeacherController extends Controller
     {
         $data = $request->validate([
             'employee_number' => ['sometimes', 'string', Rule::unique('teachers')->ignore($teacher->id)],
+            'first_name' => ['sometimes', 'string', 'max:255'],
+            'last_name' => ['sometimes', 'string', 'max:255'],
+            'middle_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'suffix' => ['sometimes', 'nullable', 'string', 'max:20'],
             'date_of_birth' => ['sometimes', 'nullable', 'date'],
             'gender' => ['sometimes', Rule::in(['male', 'female', 'other'])],
         ]);
@@ -46,7 +50,6 @@ class TeacherController extends Controller
     // ---------------------------------------------------------------
 
     // GET /api/teacher/schedule
-    // Returns the authenticated teacher's schedule with subject + section
     public function mySchedule(Request $request): JsonResponse
     {
         $query = Schedule::with(['subject', 'section.gradeLevel'])
@@ -68,7 +71,6 @@ class TeacherController extends Controller
     }
 
     // GET /api/teacher/subjects
-    // Returns distinct subjects and their sections assigned to the authenticated teacher
     public function mySubjects(Request $request): JsonResponse
     {
         $schedules = Schedule::with(['subject', 'section.gradeLevel'])
@@ -82,7 +84,6 @@ class TeacherController extends Controller
             $schedules->where('semester', $request->semester);
         }
 
-        // Group by subject so the teacher sees each subject with the sections they handle
         $grouped = $schedules->get()
             ->groupBy('subject_id')
             ->map(function ($rows) {

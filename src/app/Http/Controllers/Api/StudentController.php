@@ -33,6 +33,10 @@ class StudentController extends Controller
     {
         $data = $request->validate([
             'student_number' => ['sometimes', 'string', Rule::unique('students')->ignore($student->id)],
+            'first_name' => ['sometimes', 'string', 'max:255'],
+            'last_name' => ['sometimes', 'string', 'max:255'],
+            'middle_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'suffix' => ['sometimes', 'nullable', 'string', 'max:20'],
             'date_of_birth' => ['sometimes', 'nullable', 'date'],
             'gender' => ['sometimes', Rule::in(['male', 'female', 'other'])],
         ]);
@@ -47,7 +51,6 @@ class StudentController extends Controller
     // ---------------------------------------------------------------
 
     // GET /api/student/profile
-    // Returns the authenticated student's profile and their active enrollment
     public function myProfile(Request $request): JsonResponse
     {
         $student = $request->user()->student;
@@ -66,7 +69,6 @@ class StudentController extends Controller
     }
 
     // GET /api/student/schedule
-    // Returns the schedule for the student's active enrollment section
     public function mySchedule(Request $request): JsonResponse
     {
         $student = $request->user()->student;
@@ -96,7 +98,6 @@ class StudentController extends Controller
     }
 
     // GET /api/student/grades
-    // Returns the authenticated student's grades, optionally filtered by subject or quarter
     public function myGrades(Request $request): JsonResponse
     {
         $student = $request->user()->student;
@@ -105,7 +106,6 @@ class StudentController extends Controller
             return response()->json(['message' => 'Student profile not found.'], 404);
         }
 
-        // Get all enrollment IDs for this student
         $enrollmentIds = $student->enrollments()->pluck('id');
 
         $query = StudentGrade::with(['subject', 'gradingComponent', 'enrollment'])
@@ -120,11 +120,9 @@ class StudentController extends Controller
         }
 
         if ($request->filled('enrollment_id')) {
-            // Allow filtering to a specific enrollment (e.g. specific school year)
             $query->where('enrollment_id', $request->enrollment_id);
         }
 
-        // Group by subject for a cleaner summary
         $grouped = $query->get()
             ->groupBy('subject_id')
             ->map(function ($rows) {
@@ -140,7 +138,6 @@ class StudentController extends Controller
     }
 
     // GET /api/student/attendance
-    // Returns the authenticated student's attendance records
     public function myAttendance(Request $request): JsonResponse
     {
         $student = $request->user()->student;
@@ -168,7 +165,6 @@ class StudentController extends Controller
 
         $records = $query->orderBy('date', 'desc')->get();
 
-        // Attach a quick summary at the top level
         $summary = [
             'total' => $records->count(),
             'present' => $records->where('status', 'present')->count(),
