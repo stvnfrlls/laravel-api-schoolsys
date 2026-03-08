@@ -42,6 +42,10 @@ class UserControllerTest extends TestCase
                 'email' => 'john@example.com',
                 'password' => 'password123',
                 'role' => 'student',
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'date_of_birth' => '2005-06-15',
+                'gender' => 'male',
             ])
             ->assertCreated()
             ->assertJsonFragment(['email' => 'john@example.com']);
@@ -57,7 +61,6 @@ class UserControllerTest extends TestCase
             ->postJson('/api/users', [
                 'email' => 'noname@example.com',
                 'password' => 'password123',
-                'role' => 'student',
             ])
             ->assertCreated()
             ->assertJsonFragment(['email' => 'noname@example.com']);
@@ -348,5 +351,117 @@ class UserControllerTest extends TestCase
         $this->actingAs($admin, 'sanctum')
             ->deleteJson("/api/users/{$admin->id}")
             ->assertForbidden();
+    }
+
+    public function test_admin_can_create_student_user_with_profile(): void
+    {
+        $admin = $this->createUserWithRole('admin');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/users', [
+                'email' => 'student@example.com',
+                'password' => 'password123',
+                'role' => 'student',
+                'first_name' => 'Maria',
+                'last_name' => 'Santos',
+                'middle_name' => 'Cruz',
+                'date_of_birth' => '2007-03-10',
+                'gender' => 'female',
+            ])
+            ->assertCreated()
+            ->assertJsonStructure(['id', 'email', 'roles', 'student']);
+
+        $this->assertDatabaseHas('students', [
+            'first_name' => 'Maria',
+            'last_name' => 'Santos',
+            'gender' => 'female',
+        ]);
+    }
+
+    public function test_admin_can_create_faculty_user_with_profile(): void
+    {
+        $admin = $this->createUserWithRole('admin');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/users', [
+                'email' => 'teacher@example.com',
+                'password' => 'password123',
+                'role' => 'faculty',
+                'first_name' => 'Jose',
+                'last_name' => 'Reyes',
+                'date_of_birth' => '1985-08-20',
+                'gender' => 'male',
+                'specialization' => 'Mathematics',
+            ])
+            ->assertCreated()
+            ->assertJsonStructure(['id', 'email', 'roles', 'teacher']);
+
+        $this->assertDatabaseHas('teachers', [
+            'first_name' => 'Jose',
+            'last_name' => 'Reyes',
+            'specialization' => 'Mathematics',
+        ]);
+    }
+
+    public function test_student_profile_fields_are_required_when_role_is_student(): void
+    {
+        $admin = $this->createUserWithRole('admin');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/users', [
+                'email' => 'student@example.com',
+                'password' => 'password123',
+                'role' => 'student',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['first_name', 'last_name', 'date_of_birth', 'gender']);
+    }
+
+    public function test_faculty_profile_fields_are_required_when_role_is_faculty(): void
+    {
+        $admin = $this->createUserWithRole('admin');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/users', [
+                'email' => 'teacher@example.com',
+                'password' => 'password123',
+                'role' => 'faculty',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['first_name', 'last_name', 'date_of_birth', 'gender']);
+    }
+
+    public function test_profile_fields_not_required_for_non_student_faculty_roles(): void
+    {
+        $admin = $this->createUserWithRole('admin');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/users', [
+                'email' => 'subadmin@example.com',
+                'password' => 'password123',
+                'role' => 'sub-admin',
+            ])
+            ->assertCreated();
+    }
+
+    public function test_student_and_teacher_numbers_are_auto_generated(): void
+    {
+        $admin = $this->createUserWithRole('admin');
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/users', [
+                'email' => 'stu@example.com',
+                'password' => 'password123',
+                'role' => 'student',
+                'first_name' => 'Ana',
+                'last_name' => 'Lim',
+                'date_of_birth' => '2008-01-01',
+                'gender' => 'female',
+            ])
+            ->assertCreated();
+
+        $student = \App\Models\Student::where('first_name', 'Ana')->first();
+        $this->assertNotNull($student);
+        $this->assertStringStartsWith('STU-', $student->student_number);
     }
 }

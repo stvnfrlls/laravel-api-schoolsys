@@ -18,6 +18,7 @@ class Teacher extends Model
         'last_name',
         'middle_name',
         'suffix',
+        'specialization',
         'date_of_birth',
         'gender',
     ];

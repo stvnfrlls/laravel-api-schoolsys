@@ -25,14 +25,27 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => ['nullable', 'string', 'max:255'], // was 'required'
+            'name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'role' => ['sometimes', 'string', 'exists:roles,name'],
+
+            // Required when role is student or faculty
+            'first_name' => ['required_if:role,student,faculty', 'nullable', 'string', 'max:255'],
+            'last_name' => ['required_if:role,student,faculty', 'nullable', 'string', 'max:255'],
+            'date_of_birth' => ['required_if:role,student,faculty', 'nullable', 'date'],
+            'gender' => ['required_if:role,student,faculty', 'nullable', 'in:male,female,other'],
+
+            // Optional for both
+            'middle_name' => ['nullable', 'string', 'max:255'],
+            'suffix' => ['nullable', 'string', 'max:20'],
+
+            // Faculty only
+            'specialization' => ['nullable', 'string', 'max:255'],
         ]);
 
         $user = User::create([
-            'name' => $data['name'] ?? null, // was $data['name'] — would error if absent
+            'name' => $data['name'] ?? null,
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'is_active' => true,
@@ -43,9 +56,38 @@ class UserController extends Controller
 
         if ($role) {
             $user->roles()->attach($role);
+
+            if ($roleName === 'student') {
+                $user->student()->create([
+                    'student_number' => 'STU-' . strtoupper(substr(md5($user->id . now()), 0, 8)),
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'middle_name' => $data['middle_name'] ?? null,
+                    'suffix' => $data['suffix'] ?? null,
+                    'date_of_birth' => $data['date_of_birth'],
+                    'gender' => $data['gender'],
+                ]);
+            }
+
+            if ($roleName === 'faculty') {
+                $user->teacher()->create([
+                    'employee_number' => 'EMP-' . strtoupper(substr(md5($user->id . now()), 0, 8)),
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'middle_name' => $data['middle_name'] ?? null,
+                    'suffix' => $data['suffix'] ?? null,
+                    'date_of_birth' => $data['date_of_birth'],
+                    'gender' => $data['gender'],
+                    'specialization' => $data['specialization'] ?? null,
+                ]);
+            }
         }
 
-        $user->load('roles:id,name');
+        $user->load([
+            'roles:id,name',
+            'student',
+            'teacher',
+        ]);
 
         return response()->json($user, 201);
     }
