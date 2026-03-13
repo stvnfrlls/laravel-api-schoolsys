@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Subject extends Model
@@ -58,5 +59,10 @@ class Subject extends Model
     public function isAssignedToGradeLevel(int $gradeLevelId): bool
     {
         return $this->gradeLevels()->where('grade_level_id', $gradeLevelId)->exists();
+    }
+
+    public function gradingComponents(): HasMany
+    {
+        return $this->hasMany(GradingComponent::class);
     }
 }

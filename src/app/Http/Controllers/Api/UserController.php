@@ -15,7 +15,7 @@ class UserController extends Controller
 
     public function index(): JsonResponse
     {
-        $users = User::with('roles:id,name')
+        $users = User::with(['roles:id,name', 'student', 'teacher'])
             ->latest()
             ->paginate(20);
 
@@ -42,6 +42,12 @@ class UserController extends Controller
 
             // Faculty only
             'specialization' => ['nullable', 'string', 'max:255'],
+
+            // Required when role is student
+            'section_id' => ['required_if:role,student', 'nullable', 'exists:sections,id'],
+            'grade_level_id' => ['required_if:role,student', 'nullable', 'exists:grade_levels,id'],
+            'school_year' => ['required_if:role,student', 'nullable', 'string', 'regex:/^\d{4}-\d{4}$/'],
+            'semester' => ['required_if:role,student', 'nullable', Rule::in(['1st', '2nd', 'summer'])],
         ]);
 
         $user = User::create([
@@ -58,7 +64,7 @@ class UserController extends Controller
             $user->roles()->attach($role);
 
             if ($roleName === 'student') {
-                $user->student()->create([
+                $student = $user->student()->create([
                     'student_number' => 'STU-' . strtoupper(substr(md5($user->id . now()), 0, 8)),
                     'first_name' => $data['first_name'],
                     'last_name' => $data['last_name'],
@@ -66,6 +72,13 @@ class UserController extends Controller
                     'suffix' => $data['suffix'] ?? null,
                     'date_of_birth' => $data['date_of_birth'],
                     'gender' => $data['gender'],
+                ]);
+
+                $student->enrollments()->create([
+                    'section_id' => $data['section_id'],
+                    'grade_level_id' => $data['grade_level_id'],
+                    'school_year' => $data['school_year'],
+                    'semester' => $data['semester'],
                 ]);
             }
 
@@ -102,9 +115,14 @@ class UserController extends Controller
     public function update(Request $request, User $user): JsonResponse
     {
         $data = $request->validate([
-            'name' => ['sometimes', 'nullable', 'string', 'max:255'], // added 'nullable'
+            'name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
+            'password' => ['sometimes', 'string', 'min:8'],
         ]);
+
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
 
         $user->update($data);
 

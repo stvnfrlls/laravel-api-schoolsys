@@ -32,7 +32,7 @@ class AuthController extends Controller
 
         $user->tokens()->delete();
 
-        $token = $user->createToken('api-token')->plainTextToken;
+        $token = $user->createToken('api-token', ['api'], now()->addHours(1))->plainTextToken;
 
         return response()->json([
             'token' => $token,
@@ -69,7 +69,7 @@ class AuthController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Reset token generated. Pass this token to /api/reset-password.',
+            'message' => 'Reset token generated.',
             'token' => $token,
         ]);
     }

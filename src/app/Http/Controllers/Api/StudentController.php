@@ -25,7 +25,11 @@ class StudentController extends Controller
     // GET /students/{student}
     public function show(Student $student): JsonResponse
     {
-        return response()->json($student->load('user', 'enrollments'));
+        return response()->json($student->load(
+            'user',
+            'enrollments.section',
+            'enrollments.gradeLevel',
+        ));
     }
 
     // PUT /students/{student}

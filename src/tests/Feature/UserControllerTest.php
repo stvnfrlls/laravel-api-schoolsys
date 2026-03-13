@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Section;
+use App\Models\GradeLevel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -36,6 +38,10 @@ class UserControllerTest extends TestCase
     {
         $admin = $this->createUserWithRole('admin');
 
+        // Create required related data for student enrollment
+        $section = Section::factory()->create();
+        $gradeLevel = GradeLevel::factory()->create();
+
         $this->actingAs($admin, 'sanctum')
             ->postJson('/api/users', [
                 'name' => 'John Doe',
@@ -46,6 +52,10 @@ class UserControllerTest extends TestCase
                 'last_name' => 'Doe',
                 'date_of_birth' => '2005-06-15',
                 'gender' => 'male',
+                'section_id' => $section->id,
+                'grade_level_id' => $gradeLevel->id,
+                'school_year' => '2024-2025',
+                'semester' => '1st',
             ])
             ->assertCreated()
             ->assertJsonFragment(['email' => 'john@example.com']);
@@ -357,6 +367,10 @@ class UserControllerTest extends TestCase
     {
         $admin = $this->createUserWithRole('admin');
 
+        // Create required related data for student enrollment
+        $section = Section::factory()->create();
+        $gradeLevel = GradeLevel::factory()->create();
+
         $this->actingAs($admin, 'sanctum')
             ->postJson('/api/users', [
                 'email' => 'student@example.com',
@@ -367,6 +381,10 @@ class UserControllerTest extends TestCase
                 'middle_name' => 'Cruz',
                 'date_of_birth' => '2007-03-10',
                 'gender' => 'female',
+                'section_id' => $section->id,
+                'grade_level_id' => $gradeLevel->id,
+                'school_year' => '2024-2025',
+                'semester' => '1st',
             ])
             ->assertCreated()
             ->assertJsonStructure(['id', 'email', 'roles', 'student']);
@@ -448,6 +466,10 @@ class UserControllerTest extends TestCase
     {
         $admin = $this->createUserWithRole('admin');
 
+        // Create required related data for student enrollment
+        $section = Section::factory()->create();
+        $gradeLevel = GradeLevel::factory()->create();
+
         $this->actingAs($admin, 'sanctum')
             ->postJson('/api/users', [
                 'email' => 'stu@example.com',
@@ -457,6 +479,10 @@ class UserControllerTest extends TestCase
                 'last_name' => 'Lim',
                 'date_of_birth' => '2008-01-01',
                 'gender' => 'female',
+                'section_id' => $section->id,
+                'grade_level_id' => $gradeLevel->id,
+                'school_year' => '2024-2025',
+                'semester' => '1st',
             ])
             ->assertCreated();
 
