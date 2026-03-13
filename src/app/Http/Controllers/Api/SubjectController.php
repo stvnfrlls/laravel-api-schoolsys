@@ -46,6 +46,19 @@ class SubjectController extends Controller
 
         $subject = Subject::create($data);
 
+        $defaults = [
+            ['name' => 'Task', 'code' => 'T', 'weight' => 40.00],
+            ['name' => 'Quarterly Exam', 'code' => 'QE', 'weight' => 30.00],
+            ['name' => 'Final Exam', 'code' => 'FE', 'weight' => 30.00],
+        ];
+
+        foreach ($defaults as $component) {
+            $subject->gradingComponents()->create([
+                ...$component,
+                'is_active' => true,
+            ]);
+        }
+
         return response()->json($subject, 201);
     }
 

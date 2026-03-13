@@ -99,18 +99,18 @@ class InitialSetupSeeder extends Seeder
         }
 
         // 10 Faculty
-        User::factory()
-            ->count(10)
-            ->has(Teacher::factory())
-            ->create()
-            ->each(fn($user) => $user->roles()->attach($facultyRole->id));
+        // User::factory()
+        //     ->count(10)
+        //     ->has(Teacher::factory())
+        //     ->create()
+        //     ->each(fn($user) => $user->roles()->attach($facultyRole->id));
 
         // // 25 Students
-        User::factory()
-            ->count(25)
-            ->has(Student::factory())
-            ->create()
-            ->each(fn($user) => $user->roles()->attach($studentRole->id));
+        // User::factory()
+        //     ->count(25)
+        //     ->has(Student::factory())
+        //     ->create()
+        //     ->each(fn($user) => $user->roles()->attach($studentRole->id));
 
         // Alternative way to create students for existing users with student role but no student record
         // $users = User::whereHas('roles', fn($q) => $q->where('name', 'student'))
@@ -126,48 +126,48 @@ class InitialSetupSeeder extends Seeder
         // -------------------
         // 6. Create Subjects
         // -------------------
-        $subjects = [
-            'Mathematics',
-            'English',
-            'Science',
-            'History',
-            'Geography',
-            'Computer Science',
-            'Physical Education',
-            'Music',
-            'Art',
-            'Economics',
-        ];
+        // $subjects = [
+        //     'Mathematics',
+        //     'English',
+        //     'Science',
+        //     'History',
+        //     'Geography',
+        //     'Computer Science',
+        //     'Physical Education',
+        //     'Music',
+        //     'Art',
+        //     'Economics',
+        // ];
 
-        foreach ($subjects as $subjectName) {
-            $code = strtoupper(preg_replace('/\s+/', '', substr($subjectName, 0, 3))); // take first 3 letters, remove spaces
-            Subject::firstOrCreate(
-                ['name' => $subjectName],
-                [
-                    'code' => $code,
-                    'is_active' => true,
-                ]
-            );
-        }
+        // foreach ($subjects as $subjectName) {
+        //     $code = strtoupper(preg_replace('/\s+/', '', substr($subjectName, 0, 3))); // take first 3 letters, remove spaces
+        //     Subject::firstOrCreate(
+        //         ['name' => $subjectName],
+        //         [
+        //             'code' => $code,
+        //             'is_active' => true,
+        //         ]
+        //     );
+        // }
 
         // -------------------
         // 7. Create Enrollments
         // -------------------
-        $students = Student::all();
-        $sections = Section::all();
+        // $students = Student::all();
+        // $sections = Section::all();
 
-        foreach ($students as $student) {
+        // foreach ($students as $student) {
 
-            $section = $sections->random();
+        //     $section = $sections->random();
 
-            Enrollment::create([
-                'student_id' => $student->id,
-                'section_id' => $section->id,
-                'grade_level_id' => $section->grade_level_id,
-                'school_year' => '2023-2024',
-                'semester' => '1st',
-                'status' => 'active',
-            ]);
-        }
+        //     Enrollment::create([
+        //         'student_id' => $student->id,
+        //         'section_id' => $section->id,
+        //         'grade_level_id' => $section->grade_level_id,
+        //         'school_year' => '2023-2024',
+        //         'semester' => '1st',
+        //         'status' => 'active',
+        //     ]);
+        // }
     }
 }
