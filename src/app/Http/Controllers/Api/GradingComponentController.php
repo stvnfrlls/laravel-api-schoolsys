@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\GradingComponentResource;
 use App\Models\GradingComponent;
 use Illuminate\Http\Request;
 
@@ -20,7 +21,7 @@ class GradingComponentController extends Controller
             $query->where('is_active', $request->boolean('is_active'));
         }
 
-        return response()->json($query->get());
+        return response()->json(GradingComponentResource::collection($query->get()));
     }
 
     public function store(Request $request)
@@ -46,12 +47,12 @@ class GradingComponentController extends Controller
 
         $component = GradingComponent::create($validated);
 
-        return response()->json($component, 201);
+        return response()->json(new GradingComponentResource($component), 201);
     }
 
     public function show(GradingComponent $gradingComponent)
     {
-        return response()->json($gradingComponent->load('subject'));
+        return response()->json(new GradingComponentResource($gradingComponent));
     }
 
     public function update(Request $request, GradingComponent $gradingComponent)
@@ -78,7 +79,7 @@ class GradingComponentController extends Controller
 
         $gradingComponent->update($validated);
 
-        return response()->json($gradingComponent);
+        return response()->json(new GradingComponentResource($gradingComponent));
     }
 
     public function destroy(GradingComponent $gradingComponent)

@@ -298,7 +298,7 @@ class UserControllerTest extends TestCase
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/profile')
             ->assertOk()
-            ->assertJsonFragment(['roles' => ['faculty']]);
+            ->assertJsonPath('roles.0.name', 'faculty');
     }
 
     public function test_user_can_update_own_profile(): void

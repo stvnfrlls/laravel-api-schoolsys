@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\SectionResource;
 use App\Models\Section;
 use App\Models\GradeLevel;
 use Illuminate\Http\Request;
@@ -33,7 +34,7 @@ class SectionController extends Controller
                 ->get();
         });
 
-        return response()->json($sections);
+        return response()->json(SectionResource::collection($sections));
     }
 
     public function store(Request $request): JsonResponse
@@ -65,12 +66,12 @@ class SectionController extends Controller
         $section = Section::create($data);
         $this->clearCache($data['grade_level_id']);
 
-        return response()->json($section->load('gradeLevel'), 201);
+        return response()->json(new SectionResource($section->load('gradeLevel')), 201);
     }
 
     public function show(Section $section): JsonResponse
     {
-        return response()->json($section->load('gradeLevel'));
+        return response()->json(new SectionResource($section));
     }
 
     public function update(Request $request, Section $section): JsonResponse
@@ -97,7 +98,7 @@ class SectionController extends Controller
         $section->update($data);
         $this->clearCache($section->grade_level_id);
 
-        return response()->json($section->load('gradeLevel'));
+        return response()->json(new SectionResource($section->load('gradeLevel')));
     }
 
     public function activate(Section $section): JsonResponse
