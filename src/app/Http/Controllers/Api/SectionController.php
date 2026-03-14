@@ -7,17 +7,31 @@ use App\Models\Section;
 use App\Models\GradeLevel;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class SectionController extends Controller
 {
+    const CACHE_TTL = 1800; // 30 minutes
+
+    private function cacheKey(?int $gradeLevelId = null): string
+    {
+        return $gradeLevelId
+            ? "sections.grade.{$gradeLevelId}"
+            : 'sections.all';
+    }
 
     public function index(Request $request): JsonResponse
     {
-        $sections = Section::with('gradeLevel')
-            ->when($request->grade_level_id, fn($q, $id) => $q->forGrade($id))
-            ->orderBy('grade_level_id')
-            ->orderBy('name')
-            ->get();
+        $gradeLevelId = $request->grade_level_id ? (int) $request->grade_level_id : null;
+        $key = $this->cacheKey($gradeLevelId);
+
+        $sections = Cache::remember($key, self::CACHE_TTL, function () use ($gradeLevelId) {
+            return Section::with('gradeLevel')
+                ->when($gradeLevelId, fn($q) => $q->forGrade($gradeLevelId))
+                ->orderBy('grade_level_id')
+                ->orderBy('name')
+                ->get();
+        });
 
         return response()->json($sections);
     }
@@ -49,6 +63,7 @@ class SectionController extends Controller
         }
 
         $section = Section::create($data);
+        $this->clearCache($data['grade_level_id']);
 
         return response()->json($section->load('gradeLevel'), 201);
     }
@@ -80,6 +95,7 @@ class SectionController extends Controller
         }
 
         $section->update($data);
+        $this->clearCache($section->grade_level_id);
 
         return response()->json($section->load('gradeLevel'));
     }
@@ -93,6 +109,7 @@ class SectionController extends Controller
         }
 
         $section->update(['is_active' => true]);
+        $this->clearCache($section->grade_level_id);
 
         return response()->json(['message' => "{$section->name} activated."]);
     }
@@ -100,14 +117,23 @@ class SectionController extends Controller
     public function deactivate(Section $section): JsonResponse
     {
         $section->update(['is_active' => false]);
+        $this->clearCache($section->grade_level_id);
 
         return response()->json(['message' => "{$section->name} deactivated."]);
     }
 
     public function destroy(Section $section): JsonResponse
     {
+        $gradeLevelId = $section->grade_level_id;
         $section->delete();
+        $this->clearCache($gradeLevelId);
 
         return response()->json(['message' => "{$section->name} deleted."]);
+    }
+
+    private function clearCache(int $gradeLevelId): void
+    {
+        Cache::forget($this->cacheKey());               // clear full list
+        Cache::forget($this->cacheKey($gradeLevelId)); // clear per-grade list
     }
 }
