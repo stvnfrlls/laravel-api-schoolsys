@@ -264,7 +264,7 @@ class ScheduleTest extends TestCase
         $this->actingAsRole('student')
             ->getJson('/api/schedules')
             ->assertOk()
-            ->assertJsonStructure(['data', 'total', 'per_page']);
+            ->assertJsonStructure(['data', 'meta' => ['total', 'per_page']]);
     }
 
     public function test_schedules_can_be_filtered_by_teacher(): void

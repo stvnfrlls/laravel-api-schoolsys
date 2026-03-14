@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\StudentGradeResource;
 use App\Models\GradingComponent;
 use App\Models\StudentGrade;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class StudentGradeController extends Controller
             $query->where('is_failing', $request->boolean('is_failing'));
         }
 
-        return response()->json($query->get());
+        return response()->json(StudentGradeResource::collection($query->get()));
     }
 
     public function store(Request $request)
@@ -65,12 +66,12 @@ class StudentGradeController extends Controller
             $validated['quarter']
         );
 
-        return response()->json($grade->fresh(), 201);
+        return response()->json(new StudentGradeResource($grade->fresh()), 201);
     }
 
     public function show(StudentGrade $studentGrade)
     {
-        return response()->json($studentGrade->load(['enrollment.student', 'subject', 'gradingComponent']));
+        return response()->json(new StudentGradeResource($studentGrade->load(['enrollment.student', 'subject', 'gradingComponent'])));
     }
 
     public function update(Request $request, StudentGrade $studentGrade)
@@ -91,7 +92,7 @@ class StudentGradeController extends Controller
             $studentGrade->quarter
         );
 
-        return response()->json($studentGrade->fresh());
+        return response()->json(new StudentGradeResource($studentGrade->fresh()));
     }
 
     public function destroy(StudentGrade $studentGrade)

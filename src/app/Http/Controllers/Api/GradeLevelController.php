@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\GradeLevelResource;
 use App\Models\GradeLevel;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +22,7 @@ class GradeLevelController extends Controller
                 ->get();
         });
 
-        return response()->json($grades);
+        return response()->json(GradeLevelResource::collection($grades));
     }
 
     public function store(Request $request): JsonResponse
@@ -34,14 +35,14 @@ class GradeLevelController extends Controller
         $grade = GradeLevel::create($data);
         Cache::forget(self::CACHE_KEY);
 
-        return response()->json($grade, 201);
+        return response()->json(new GradeLevelResource($grade), 201);
     }
 
     public function show(GradeLevel $gradeLevel): JsonResponse
     {
         $gradeLevel->load('sections');
 
-        return response()->json($gradeLevel);
+        return response()->json(new GradeLevelResource($gradeLevel));
     }
 
     public function update(Request $request, GradeLevel $gradeLevel): JsonResponse
@@ -54,7 +55,7 @@ class GradeLevelController extends Controller
         $gradeLevel->update($data);
         Cache::forget(self::CACHE_KEY);
 
-        return response()->json($gradeLevel);
+        return response()->json(new GradeLevelResource($gradeLevel));
     }
 
     public function activate(GradeLevel $gradeLevel): JsonResponse

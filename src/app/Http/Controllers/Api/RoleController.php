@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\RoleResource;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +22,7 @@ class RoleController extends Controller
             return Role::withCount('users')->get();
         });
 
-        return response()->json($roles);
+        return response()->json(RoleResource::collection($roles));
     }
 
     public function store(Request $request)
@@ -34,14 +35,14 @@ class RoleController extends Controller
         $role = Role::create($data);
         Cache::forget(self::CACHE_KEY);
 
-        return response()->json($role, 201);
+        return response()->json(new RoleResource($role), 201);
     }
 
     public function show(Role $role)
     {
         $role->load('users:id,name,email');
 
-        return response()->json($role);
+        return response()->json(new RoleResource($role));
     }
 
     public function update(Request $request, Role $role): JsonResponse
@@ -54,7 +55,7 @@ class RoleController extends Controller
         $role->update($data);
         Cache::forget(self::CACHE_KEY);
 
-        return response()->json($role);
+        return response()->json(new RoleResource($role));
     }
 
     public function destroy(Role $role): JsonResponse
@@ -81,7 +82,7 @@ class RoleController extends Controller
 
         return response()->json([
             'message' => 'Roles assigned.',
-            'roles' => $user->roles,
+            'roles' => RoleResource::collection($user->roles),
         ]);
     }
 
@@ -108,7 +109,7 @@ class RoleController extends Controller
 
         return response()->json([
             'message' => 'Roles synced.',
-            'roles' => $user->roles,
+            'roles' => RoleResource::collection($user->roles),
         ]);
     }
 }

@@ -92,7 +92,7 @@ class TeacherTest extends TestCase
         $this->actingAsRole('admin')
             ->getJson('/api/teachers')
             ->assertOk()
-            ->assertJsonStructure(['data', 'total', 'per_page']);
+            ->assertJsonStructure(['data', 'meta' => ['total', 'per_page']]);
     }
 
     public function test_sub_admin_can_list_teachers(): void

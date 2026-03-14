@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\EnrollmentResource;
 use App\Models\Enrollment;
 use App\Models\Section;
 use App\Models\Student;
@@ -13,7 +14,7 @@ use Illuminate\Validation\Rule;
 class EnrollmentController extends Controller
 {
     // GET /enrollments
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $query = Enrollment::with(['student.user', 'section', 'gradeLevel']);
 
@@ -26,7 +27,7 @@ class EnrollmentController extends Controller
         if ($request->filled('status'))
             $query->where('status', $request->status);
 
-        return response()->json($query->paginate(20));
+        return EnrollmentResource::collection($query->paginate(20));
     }
 
     // POST /enrollments
@@ -65,18 +66,13 @@ class EnrollmentController extends Controller
         // refresh() re-queries the DB so columns with database-level defaults
         // (status, enrolled_at) are present in the response — create() alone
         // only returns what you passed in.
-        return response()->json(
-            $enrollment->refresh()->load(['student.user', 'section', 'gradeLevel']),
-            201
-        );
+        return response()->json(new EnrollmentResource($enrollment->refresh()->load(['student.user', 'section', 'gradeLevel'])), 201);
     }
 
     // GET /enrollments/{enrollment}
     public function show(Enrollment $enrollment): JsonResponse
     {
-        return response()->json(
-            $enrollment->load(['student.user', 'section', 'gradeLevel'])
-        );
+        return response()->json(new EnrollmentResource($enrollment->load(['student.user', 'section', 'gradeLevel'])));
     }
 
     // PUT /enrollments/{enrollment}
@@ -101,9 +97,7 @@ class EnrollmentController extends Controller
 
         $enrollment->update($data);
 
-        return response()->json(
-            $enrollment->fresh(['student.user', 'section', 'gradeLevel'])
-        );
+        return response()->json(new EnrollmentResource($enrollment->fresh(['student.user', 'section', 'gradeLevel'])));
     }
 
     // DELETE /enrollments/{enrollment}
@@ -114,7 +108,7 @@ class EnrollmentController extends Controller
     }
 
     // GET /sections/{section}/enrollments
-    public function bySection(Request $request, Section $section): JsonResponse
+    public function bySection(Request $request, Section $section)
     {
         $request->validate([
             'school_year' => ['nullable', 'string'],
@@ -131,6 +125,6 @@ class EnrollmentController extends Controller
         if ($request->filled('status'))
             $query->where('status', $request->status);
 
-        return response()->json($query->paginate(20));
+        return EnrollmentResource::collection($query->paginate(20));
     }
 }

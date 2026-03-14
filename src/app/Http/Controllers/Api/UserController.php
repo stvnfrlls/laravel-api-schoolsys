@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -19,7 +20,7 @@ class UserController extends Controller
             ->latest()
             ->paginate(20);
 
-        return response()->json($users);
+        return response()->json(UserResource::collection($users));
     }
 
     public function store(Request $request)
@@ -102,14 +103,14 @@ class UserController extends Controller
             'teacher',
         ]);
 
-        return response()->json($user, 201);
+        return response()->json(new UserResource($user), 201);
     }
 
     public function show(User $user): JsonResponse
     {
         $user->load('roles:id,name,description');
 
-        return response()->json($user);
+        return response()->json(new UserResource($user));
     }
 
     public function update(Request $request, User $user): JsonResponse
@@ -126,7 +127,7 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return response()->json($user->load('roles:id,name'));
+        return response()->json(new UserResource($user->load('roles:id,name')));
     }
 
     public function destroy(User $user): JsonResponse
@@ -152,9 +153,7 @@ class UserController extends Controller
             'is_active' => true,
         ]);
 
-        return response()->json([
-            'message' => 'User activated successfully.'
-        ]);
+        return response()->json(['message' => 'User activated successfully.']);
     }
 
     public function deactivate(User $user)
@@ -177,22 +176,14 @@ class UserController extends Controller
 
         $user->tokens()->delete();
 
-        return response()->json([
-            'message' => 'User deactivated successfully.'
-        ], 200);
+        return response()->json(['message' => 'User deactivated successfully.']);
     }
 
     public function profile(Request $request): JsonResponse
     {
         $user = $request->user()->load('roles:id,name');
 
-        return response()->json([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'is_active' => $user->is_active,
-            'roles' => $user->roles->pluck('name'),
-        ]);
+        return response()->json(new UserResource($user));
     }
 
     public function updateProfile(Request $request): JsonResponse
@@ -205,12 +196,6 @@ class UserController extends Controller
         ]);
 
         $user->update($data);
-
-        return response()->json([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'roles' => $user->load('roles')->roles->pluck('name'),
-        ]);
+        return response()->json(new UserResource($user->load('roles')));
     }
 }

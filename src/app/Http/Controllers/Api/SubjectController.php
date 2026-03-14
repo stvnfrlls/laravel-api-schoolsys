@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\SubjectResource;
 use App\Models\GradeLevel;
 use App\Models\Subject;
 use Illuminate\Http\JsonResponse;
@@ -26,7 +27,7 @@ class SubjectController extends Controller
         return 'subjects.index.' . md5(serialize($params));
     }
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $request->validate([
             'status' => ['nullable', 'in:active,inactive,all'],
@@ -46,7 +47,7 @@ class SubjectController extends Controller
                 ->paginate($request->input('per_page', 15));
         });
 
-        return response()->json($subjects);
+        return SubjectResource::collection($subjects);
     }
 
     public function store(Request $request): JsonResponse
@@ -75,12 +76,12 @@ class SubjectController extends Controller
 
         $this->clearCache();
 
-        return response()->json($subject, 201);
+        return response()->json(new SubjectResource($subject), 201);
     }
 
     public function show(Subject $subject): JsonResponse
     {
-        return response()->json($subject->load('gradeLevels'));
+        return response()->json(new SubjectResource($subject));
     }
 
     public function update(Request $request, Subject $subject): JsonResponse
@@ -107,7 +108,7 @@ class SubjectController extends Controller
         $subject->update($data);
         $this->clearCache();
 
-        return response()->json($subject->fresh());
+        return response()->json(new SubjectResource($subject->fresh()));
     }
 
     public function destroy(Subject $subject): JsonResponse
@@ -129,7 +130,7 @@ class SubjectController extends Controller
         $subject->activate();
         $this->clearCache();
 
-        return response()->json($subject->fresh());
+        return response()->json(new SubjectResource($subject->fresh()));
     }
 
     public function deactivate(Subject $subject): JsonResponse
@@ -137,7 +138,7 @@ class SubjectController extends Controller
         $subject->deactivate();
         $this->clearCache();
 
-        return response()->json($subject->fresh());
+        return response()->json(new SubjectResource($subject->fresh()));
     }
 
     public function assignToGradeLevel(Request $request, Subject $subject): JsonResponse
@@ -163,7 +164,7 @@ class SubjectController extends Controller
 
         $this->clearCache();
 
-        return response()->json($subject->load('gradeLevels'));
+        return response()->json(new SubjectResource($subject->load('gradeLevels')));
     }
 
     public function removeFromGradeLevel(Subject $subject, GradeLevel $gradeLevel): JsonResponse

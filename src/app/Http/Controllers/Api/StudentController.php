@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AttendanceResource;
+use App\Http\Resources\ScheduleResource;
+use App\Http\Resources\StudentResource;
 use App\Models\Attendance;
 use App\Models\Schedule;
 use App\Models\Student;
@@ -22,7 +25,7 @@ class StudentController extends Controller
     }
 
     // GET /students
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $page = (int) $request->input('page', 1);
         $key = $this->indexCacheKey($page);
@@ -31,17 +34,13 @@ class StudentController extends Controller
             return Student::with('user')->paginate(20);
         });
 
-        return response()->json($students);
+        return StudentResource::collection($students);
     }
 
     // GET /students/{student}
     public function show(Student $student): JsonResponse
     {
-        return response()->json($student->load(
-            'user',
-            'enrollments.section',
-            'enrollments.gradeLevel',
-        ));
+        return response()->json(new StudentResource($student->load('user', 'enrollments.section', 'enrollments.gradeLevel')));
     }
 
     // PUT /students/{student}
@@ -60,7 +59,7 @@ class StudentController extends Controller
         $student->update($data);
         $this->clearCache();
 
-        return response()->json($student->fresh('user'));
+        return response()->json(new StudentResource($student->fresh('user')));
     }
 
     // ---------------------------------------------------------------
@@ -75,11 +74,11 @@ class StudentController extends Controller
             return response()->json(['message' => 'Student profile not found.'], 404);
         }
 
-        return response()->json($student->load([
+        return response()->json(new StudentResource($student->load([
             'user',
             'activeEnrollment.section.gradeLevel',
             'activeEnrollment.gradeLevel',
-        ]));
+        ])));
     }
 
     public function mySchedule(Request $request): JsonResponse
@@ -107,7 +106,7 @@ class StudentController extends Controller
             $query->where('semester', $request->semester);
         }
 
-        return response()->json($query->orderBy('day')->orderBy('start_time')->get());
+        return response()->json(ScheduleResource::collection($query->orderBy('day')->orderBy('start_time')->get()));
     }
 
     public function myGrades(Request $request): JsonResponse
@@ -186,7 +185,7 @@ class StudentController extends Controller
 
         return response()->json([
             'summary' => $summary,
-            'records' => $records,
+            'records' => AttendanceResource::collection($records),
         ]);
     }
 

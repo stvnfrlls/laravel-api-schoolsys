@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AttendanceResource;
+use App\Http\Resources\StudentResource;
 use App\Models\Attendance;
 use App\Models\Enrollment;
 use Illuminate\Http\Request;
@@ -33,7 +35,7 @@ class AttendanceController extends Controller
             $query->where('status', $request->status);
         }
 
-        return response()->json($query->orderBy('date', 'desc')->get());
+        return response()->json(AttendanceResource::collection($query->orderBy('date', 'desc')->get()));
     }
 
     // ---------------------------------------------------------------
@@ -61,7 +63,7 @@ class AttendanceController extends Controller
             ]
         );
 
-        return response()->json($attendance->load(['enrollment.student', 'subject']), 201);
+        return response()->json(new AttendanceResource($attendance->load(['enrollment.student', 'subject'])), 201);
     }
 
     // ---------------------------------------------------------------
@@ -69,7 +71,7 @@ class AttendanceController extends Controller
     // ---------------------------------------------------------------
     public function show(Attendance $attendance)
     {
-        return response()->json($attendance->load(['enrollment.student', 'subject']));
+        return response()->json(new AttendanceResource($attendance->load(['enrollment.student', 'subject'])));
     }
 
     // ---------------------------------------------------------------
@@ -84,7 +86,7 @@ class AttendanceController extends Controller
 
         $attendance->update($validated);
 
-        return response()->json($attendance->fresh()->load(['enrollment.student', 'subject']));
+        return response()->json(new AttendanceResource($attendance->fresh()->load(['enrollment.student', 'subject'])));
     }
 
     // ---------------------------------------------------------------
@@ -111,7 +113,7 @@ class AttendanceController extends Controller
 
         return response()->json([
             'enrollment_id' => $enrollment->id,
-            'student' => $enrollment->student,
+            'student' => new StudentResource($enrollment->student),
             'total' => $total,
             'present' => $present,
             'absent' => $absent,

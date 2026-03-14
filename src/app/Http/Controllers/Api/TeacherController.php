@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ScheduleResource;
+use App\Http\Resources\TeacherResource;
 use App\Models\Schedule;
 use App\Models\Teacher;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +22,7 @@ class TeacherController extends Controller
     }
 
     // GET /teachers
-    public function index(): JsonResponse
+    public function index()
     {
         $page = (int) request()->input('page', 1);
         $key = $this->indexCacheKey($page);
@@ -29,15 +31,13 @@ class TeacherController extends Controller
             return Teacher::with('user')->paginate(20);
         });
 
-        return response()->json($teachers);
+        return TeacherResource::collection($teachers);
     }
 
     // GET /teachers/{teacher}
     public function show(Teacher $teacher): JsonResponse
     {
-        return response()->json(
-            $teacher->load('user', 'schedules')
-        );
+        return response()->json(new TeacherResource($teacher->load('user', 'schedules')));
     }
 
     // PUT /teachers/{teacher}
@@ -56,7 +56,7 @@ class TeacherController extends Controller
         $teacher->update($data);
         $this->clearCache();
 
-        return response()->json($teacher->fresh('user'));
+        return response()->json(new TeacherResource($teacher->fresh('user')));
     }
 
     // ---------------------------------------------------------------
@@ -81,7 +81,7 @@ class TeacherController extends Controller
             $query->forDay($request->day);
         }
 
-        return response()->json($query->orderBy('day')->orderBy('start_time')->get());
+        return response()->json(ScheduleResource::collection($query->orderBy('day')->orderBy('start_time')->get()));
     }
 
     // GET /api/teacher/subjects

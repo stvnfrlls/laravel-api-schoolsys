@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ScheduleResource;
 use App\Models\Schedule;
 use App\Models\Section;
 use App\Models\User;
@@ -31,7 +32,7 @@ class ScheduleController extends Controller
     }
 
     // GET /schedules
-    public function index(Request $request): JsonResponse
+    public function index(Request $request)
     {
         $key = $this->indexCacheKey($request);
 
@@ -54,7 +55,7 @@ class ScheduleController extends Controller
             return $query->orderBy('day')->orderBy('start_time')->paginate(20);
         });
 
-        return response()->json($schedules);
+        return ScheduleResource::collection($schedules);
     }
 
     // POST /schedules
@@ -85,16 +86,13 @@ class ScheduleController extends Controller
         $schedule = Schedule::create($data);
         $this->clearCache();
 
-        return response()->json(
-            $schedule->load(['section', 'subject', 'teacher']),
-            201
-        );
+        return response()->json(new ScheduleResource($schedule->load(['section', 'subject', 'teacher'])), 201);
     }
 
     // GET /schedules/{schedule}
     public function show(Schedule $schedule): JsonResponse
     {
-        return response()->json($schedule->load(['section', 'subject', 'teacher']));
+        return response()->json(new ScheduleResource($schedule->load(['section', 'subject', 'teacher'])));
     }
 
     // PUT /schedules/{schedule}
@@ -138,9 +136,7 @@ class ScheduleController extends Controller
         $schedule->update($data);
         $this->clearCache();
 
-        return response()->json(
-            $schedule->fresh(['section', 'subject', 'teacher'])
-        );
+        return response()->json(new ScheduleResource($schedule->fresh(['section', 'subject', 'teacher'])));
     }
 
     // DELETE /schedules/{schedule}
@@ -164,9 +160,7 @@ class ScheduleController extends Controller
         if ($request->filled('day'))
             $query->where('day', $request->day);
 
-        return response()->json(
-            $query->orderBy('day')->orderBy('start_time')->get()
-        );
+        return response()->json(ScheduleResource::collection($query->orderBy('day')->orderBy('start_time')->get()));
     }
 
     private function detectConflict(array $data, ?int $excludeId = null): ?string

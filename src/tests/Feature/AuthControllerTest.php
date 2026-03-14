@@ -56,7 +56,7 @@ class AuthControllerTest extends TestCase
             'password' => 'password123',
         ])
             ->assertOk()
-            ->assertJsonPath('user.roles.0', 'admin');
+            ->assertJsonPath('user.roles.0.name', 'admin');
     }
 
     public function test_login_fails_with_wrong_password(): void
