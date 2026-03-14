@@ -102,19 +102,22 @@ class AttendanceController extends Controller
     // ---------------------------------------------------------------
     public function summary(Enrollment $enrollment)
     {
-        $records = Attendance::where('enrollment_id', $enrollment->id);
+        $records = Attendance::where('enrollment_id', $enrollment->id)->get();
 
-        $summary = [
+        $total = $records->count();
+        $present = $records->where('status', 'present')->count();
+        $absent = $records->where('status', 'absent')->count();
+        $late = $records->where('status', 'late')->count();
+
+        return response()->json([
             'enrollment_id' => $enrollment->id,
             'student' => $enrollment->student,
-            'total' => (clone $records)->count(),
-            'present' => (clone $records)->present()->count(),
-            'absent' => (clone $records)->absent()->count(),
-            'late' => (clone $records)->late()->count(),
-            'is_flagged' => (clone $records)->absent()->count() >= Attendance::ABSENCE_THRESHOLD,
-        ];
-
-        return response()->json($summary);
+            'total' => $total,
+            'present' => $present,
+            'absent' => $absent,
+            'late' => $late,
+            'is_flagged' => $absent >= Attendance::ABSENCE_THRESHOLD,
+        ]);
     }
 
     // ---------------------------------------------------------------
@@ -126,16 +129,19 @@ class AttendanceController extends Controller
         $flaggedEnrollmentIds = Attendance::excessiveAbsences()
             ->pluck('enrollment_id');
 
+        // Get all absence counts in ONE query
+        $absenceCounts = Attendance::whereIn('enrollment_id', $flaggedEnrollmentIds)
+            ->where('status', 'absent')
+            ->groupBy('enrollment_id')
+            ->selectRaw('enrollment_id, COUNT(*) as absence_count')
+            ->pluck('absence_count', 'enrollment_id'); // keyed by enrollment_id
+
         $enrollments = Enrollment::with(['student', 'section'])
             ->whereIn('id', $flaggedEnrollmentIds)
             ->get()
-            ->map(function ($enrollment) {
-                $absenceCount = Attendance::where('enrollment_id', $enrollment->id)
-                    ->absent()
-                    ->count();
-
+            ->map(function ($enrollment) use ($absenceCounts) {
                 return array_merge($enrollment->toArray(), [
-                    'absence_count' => $absenceCount,
+                    'absence_count' => $absenceCounts[$enrollment->id] ?? 0,
                 ]);
             });
 
