@@ -8,29 +8,53 @@ use App\Models\Section;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class ScheduleController extends Controller
 {
+    const CACHE_TTL = 600; // 10 minutes
+
+    private function indexCacheKey(Request $request): string
+    {
+        $params = [
+            'section_id' => $request->input('section_id', 'all'),
+            'teacher_id' => $request->input('teacher_id', 'all'),
+            'subject_id' => $request->input('subject_id', 'all'),
+            'day' => $request->input('day', 'all'),
+            'school_year' => $request->input('school_year', 'all'),
+            'semester' => $request->input('semester', 'all'),
+            'page' => $request->input('page', 1),
+        ];
+
+        return 'schedules.index.' . md5(serialize($params));
+    }
+
     // GET /schedules
     public function index(Request $request): JsonResponse
     {
-        $query = Schedule::with(['section', 'subject', 'teacher']);
+        $key = $this->indexCacheKey($request);
 
-        if ($request->filled('section_id'))
-            $query->where('section_id', $request->section_id);
-        if ($request->filled('teacher_id'))
-            $query->where('teacher_id', $request->teacher_id);
-        if ($request->filled('subject_id'))
-            $query->where('subject_id', $request->subject_id);
-        if ($request->filled('day'))
-            $query->where('day', $request->day);
-        if ($request->filled('school_year'))
-            $query->where('school_year', $request->school_year);
-        if ($request->filled('semester'))
-            $query->where('semester', $request->semester);
+        $schedules = Cache::remember($key, self::CACHE_TTL, function () use ($request) {
+            $query = Schedule::with(['section', 'subject', 'teacher']);
 
-        return response()->json($query->orderBy('day')->orderBy('start_time')->paginate(20));
+            if ($request->filled('section_id'))
+                $query->where('section_id', $request->section_id);
+            if ($request->filled('teacher_id'))
+                $query->where('teacher_id', $request->teacher_id);
+            if ($request->filled('subject_id'))
+                $query->where('subject_id', $request->subject_id);
+            if ($request->filled('day'))
+                $query->where('day', $request->day);
+            if ($request->filled('school_year'))
+                $query->where('school_year', $request->school_year);
+            if ($request->filled('semester'))
+                $query->where('semester', $request->semester);
+
+            return $query->orderBy('day')->orderBy('start_time')->paginate(20);
+        });
+
+        return response()->json($schedules);
     }
 
     // POST /schedules
@@ -47,7 +71,6 @@ class ScheduleController extends Controller
             'semester' => ['required', Rule::in(['1st', '2nd', 'summer'])],
         ]);
 
-        // Guard: teacher must have the faculty role
         $teacher = User::findOrFail($data['teacher_id']);
         if (!$teacher->hasRole('faculty')) {
             return response()->json([
@@ -55,14 +78,12 @@ class ScheduleController extends Controller
             ], 422);
         }
 
-        // Guard: check for conflicts
         if ($conflict = $this->detectConflict($data)) {
-            return response()->json([
-                'message' => $conflict,
-            ], 422);
+            return response()->json(['message' => $conflict], 422);
         }
 
         $schedule = Schedule::create($data);
+        $this->clearCache();
 
         return response()->json(
             $schedule->load(['section', 'subject', 'teacher']),
@@ -90,7 +111,6 @@ class ScheduleController extends Controller
             'semester' => ['sometimes', Rule::in(['1st', '2nd', 'summer'])],
         ]);
 
-        // Guard: teacher role check if teacher_id is being changed
         if (isset($data['teacher_id'])) {
             $teacher = User::findOrFail($data['teacher_id']);
             if (!$teacher->hasRole('faculty')) {
@@ -100,7 +120,6 @@ class ScheduleController extends Controller
             }
         }
 
-        // Merge incoming data with existing values for conflict check
         $merged = array_merge($schedule->only([
             'section_id',
             'subject_id',
@@ -113,12 +132,11 @@ class ScheduleController extends Controller
         ]), $data);
 
         if ($conflict = $this->detectConflict($merged, $schedule->id)) {
-            return response()->json([
-                'message' => $conflict,
-            ], 422);
+            return response()->json(['message' => $conflict], 422);
         }
 
         $schedule->update($data);
+        $this->clearCache();
 
         return response()->json(
             $schedule->fresh(['section', 'subject', 'teacher'])
@@ -129,6 +147,8 @@ class ScheduleController extends Controller
     public function destroy(Schedule $schedule): JsonResponse
     {
         $schedule->delete();
+        $this->clearCache();
+
         return response()->json(['message' => 'Schedule removed successfully.']);
     }
 
@@ -149,25 +169,6 @@ class ScheduleController extends Controller
         );
     }
 
-    // ── Conflict detection ────────────────────────────────────────────────
-
-    /**
-     * Checks two types of conflicts for the given schedule data:
-     *
-     * 1. Section conflict — the section already has a different subject
-     *    scheduled that overlaps on the same day and period.
-     *
-     * 2. Teacher conflict — the teacher is already assigned to a different
-     *    schedule that overlaps on the same day and period.
-     *
-     * Time overlap condition:
-     *   existing.start_time < new.end_time AND existing.end_time > new.start_time
-     *
-     * @param array    $data       The schedule data to check.
-     * @param int|null $excludeId  The current schedule's ID when updating
-     *                             (excludes it from the conflict query so a
-     *                             record does not conflict with itself).
-     */
     private function detectConflict(array $data, ?int $excludeId = null): ?string
     {
         $base = Schedule::where('day', $data['day'])
@@ -177,16 +178,21 @@ class ScheduleController extends Controller
             ->where('end_time', '>', $data['start_time'])
             ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId));
 
-        // 1. Section conflict
         if ((clone $base)->where('section_id', $data['section_id'])->exists()) {
             return 'The section already has a subject scheduled during this time slot.';
         }
 
-        // 2. Teacher conflict
         if ((clone $base)->where('teacher_id', $data['teacher_id'])->exists()) {
             return 'The teacher is already assigned to another class during this time slot.';
         }
 
         return null;
+    }
+
+    private function clearCache(): void
+    {
+        \DB::table('cache')
+            ->where('key', 'like', '%schedules.index.%')
+            ->delete();
     }
 }

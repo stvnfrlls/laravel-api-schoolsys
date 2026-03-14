@@ -7,16 +7,29 @@ use App\Models\Schedule;
 use App\Models\Teacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class TeacherController extends Controller
 {
+    const CACHE_TTL = 600; // 10 minutes
+
+    private function indexCacheKey(int $page = 1): string
+    {
+        return "teachers.index.page.{$page}";
+    }
+
     // GET /teachers
     public function index(): JsonResponse
     {
-        return response()->json(
-            Teacher::with('user')->paginate(20)
-        );
+        $page = (int) request()->input('page', 1);
+        $key = $this->indexCacheKey($page);
+
+        $teachers = Cache::remember($key, self::CACHE_TTL, function () {
+            return Teacher::with('user')->paginate(20);
+        });
+
+        return response()->json($teachers);
     }
 
     // GET /teachers/{teacher}
@@ -41,12 +54,13 @@ class TeacherController extends Controller
         ]);
 
         $teacher->update($data);
+        $this->clearCache();
 
         return response()->json($teacher->fresh('user'));
     }
 
     // ---------------------------------------------------------------
-    // Teacher self-service routes (role: faculty)
+    // Teacher self-service routes — no caching, always real-time
     // ---------------------------------------------------------------
 
     // GET /api/teacher/schedule
@@ -96,5 +110,12 @@ class TeacherController extends Controller
             ->values();
 
         return response()->json($grouped);
+    }
+
+    private function clearCache(): void
+    {
+        \DB::table('cache')
+            ->where('key', 'like', '%teachers.index.page.%')
+            ->delete();
     }
 }

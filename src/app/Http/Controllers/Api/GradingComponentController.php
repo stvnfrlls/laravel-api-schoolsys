@@ -12,11 +12,11 @@ class GradingComponentController extends Controller
     {
         $query = GradingComponent::with('subject');
 
-        if ($request->has('subject_id')) {
+        if ($request->filled('subject_id')) {
             $query->where('subject_id', $request->subject_id);
         }
 
-        if ($request->has('is_active')) {
+        if ($request->filled('is_active')) {
             $query->where('is_active', $request->boolean('is_active'));
         }
 

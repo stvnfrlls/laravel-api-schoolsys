@@ -13,19 +13,19 @@ class StudentGradeController extends Controller
     {
         $query = StudentGrade::with(['enrollment.student', 'subject', 'gradingComponent']);
 
-        if ($request->has('enrollment_id')) {
+        if ($request->filled('enrollment_id')) {
             $query->where('enrollment_id', $request->enrollment_id);
         }
 
-        if ($request->has('subject_id')) {
+        if ($request->filled('subject_id')) {
             $query->where('subject_id', $request->subject_id);
         }
 
-        if ($request->has('quarter')) {
+        if ($request->filled('quarter')) {
             $query->where('quarter', $request->quarter);
         }
 
-        if ($request->has('is_failing')) {
+        if ($request->filled('is_failing')) {
             $query->where('is_failing', $request->boolean('is_failing'));
         }
 
@@ -109,12 +109,16 @@ class StudentGradeController extends Controller
             ->where('quarter', $quarter)
             ->get();
 
-        $finalGrade = $grades->sum('weighted_score');
+        $finalGrade = round($grades->sum('weighted_score'), 2);
         $isFailing = $finalGrade < 75;
 
-        $grades->each(fn($g) => $g->update([
-            'final_grade' => round($finalGrade, 2),
-            'is_failing' => $isFailing,
-        ]));
+        // One UPDATE instead of one per row
+        StudentGrade::where('enrollment_id', $enrollmentId)
+            ->where('subject_id', $subjectId)
+            ->where('quarter', $quarter)
+            ->update([
+                'final_grade' => $finalGrade,
+                'is_failing' => $isFailing,
+            ]);
     }
 }

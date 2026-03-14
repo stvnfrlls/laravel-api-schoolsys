@@ -4,22 +4,34 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
-use App\Models\Enrollment;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\StudentGrade;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class StudentController extends Controller
 {
-    // GET /students
-    public function index(): JsonResponse
+    const CACHE_TTL = 600; // 10 minutes — shorter since students change more often
+
+    private function indexCacheKey(int $page = 1): string
     {
-        return response()->json(
-            Student::with('user')->paginate(20)
-        );
+        return "students.index.page.{$page}";
+    }
+
+    // GET /students
+    public function index(Request $request): JsonResponse
+    {
+        $page = (int) $request->input('page', 1);
+        $key = $this->indexCacheKey($page);
+
+        $students = Cache::remember($key, self::CACHE_TTL, function () {
+            return Student::with('user')->paginate(20);
+        });
+
+        return response()->json($students);
     }
 
     // GET /students/{student}
@@ -46,15 +58,15 @@ class StudentController extends Controller
         ]);
 
         $student->update($data);
+        $this->clearCache();
 
         return response()->json($student->fresh('user'));
     }
 
     // ---------------------------------------------------------------
-    // Student self-service routes (role: student)
+    // Student self-service routes — no caching, always real-time
     // ---------------------------------------------------------------
 
-    // GET /api/student/profile
     public function myProfile(Request $request): JsonResponse
     {
         $student = $request->user()->student;
@@ -63,16 +75,13 @@ class StudentController extends Controller
             return response()->json(['message' => 'Student profile not found.'], 404);
         }
 
-        return response()->json(
-            $student->load([
-                'user',
-                'activeEnrollment.section.gradeLevel',
-                'activeEnrollment.gradeLevel',
-            ])
-        );
+        return response()->json($student->load([
+            'user',
+            'activeEnrollment.section.gradeLevel',
+            'activeEnrollment.gradeLevel',
+        ]));
     }
 
-    // GET /api/student/schedule
     public function mySchedule(Request $request): JsonResponse
     {
         $student = $request->user()->student;
@@ -101,7 +110,6 @@ class StudentController extends Controller
         return response()->json($query->orderBy('day')->orderBy('start_time')->get());
     }
 
-    // GET /api/student/grades
     public function myGrades(Request $request): JsonResponse
     {
         $student = $request->user()->student;
@@ -141,7 +149,6 @@ class StudentController extends Controller
         return response()->json($grouped);
     }
 
-    // GET /api/student/attendance
     public function myAttendance(Request $request): JsonResponse
     {
         $student = $request->user()->student;
@@ -181,5 +188,12 @@ class StudentController extends Controller
             'summary' => $summary,
             'records' => $records,
         ]);
+    }
+
+    private function clearCache(): void
+    {
+        \DB::table('cache')
+            ->where('key', 'like', '%students.index.page.%')
+            ->delete();
     }
 }

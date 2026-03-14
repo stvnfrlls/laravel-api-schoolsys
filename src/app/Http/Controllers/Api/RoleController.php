@@ -7,14 +7,19 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
+    const CACHE_KEY = 'roles.all';
+    const CACHE_TTL = 3600; // 1 hour
 
     public function index()
     {
-        $roles = Role::withCount('users')->get();
+        $roles = Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
+            return Role::withCount('users')->get();
+        });
 
         return response()->json($roles);
     }
@@ -27,6 +32,7 @@ class RoleController extends Controller
         ]);
 
         $role = Role::create($data);
+        Cache::forget(self::CACHE_KEY);
 
         return response()->json($role, 201);
     }
@@ -46,6 +52,7 @@ class RoleController extends Controller
         ]);
 
         $role->update($data);
+        Cache::forget(self::CACHE_KEY);
 
         return response()->json($role);
     }
@@ -53,6 +60,7 @@ class RoleController extends Controller
     public function destroy(Role $role): JsonResponse
     {
         $role->delete();
+        Cache::forget(self::CACHE_KEY);
 
         return response()->json(['message' => 'Role deleted.']);
     }
@@ -68,6 +76,9 @@ class RoleController extends Controller
         $user->roles()->syncWithoutDetaching($roleIds);
         $user->load('roles');
 
+        // User count per role changed — invalidate
+        Cache::forget(self::CACHE_KEY);
+
         return response()->json([
             'message' => 'Roles assigned.',
             'roles' => $user->roles,
@@ -77,6 +88,7 @@ class RoleController extends Controller
     public function removeFromUser(User $user, Role $role): JsonResponse
     {
         $user->roles()->detach($role);
+        Cache::forget(self::CACHE_KEY);
 
         return response()->json(['message' => 'Role removed.']);
     }
@@ -91,6 +103,8 @@ class RoleController extends Controller
         $roleIds = Role::whereIn('name', $request->roles)->pluck('id');
         $user->roles()->sync($roleIds);
         $user->load('roles');
+
+        Cache::forget(self::CACHE_KEY);
 
         return response()->json([
             'message' => 'Roles synced.',

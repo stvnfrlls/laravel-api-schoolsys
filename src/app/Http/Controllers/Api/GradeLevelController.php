@@ -6,15 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\GradeLevel;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class GradeLevelController extends Controller
 {
+    const CACHE_KEY = 'grade_levels.all';
+    const CACHE_TTL = 3600; // 1 hour
 
     public function index(): JsonResponse
     {
-        $grades = GradeLevel::withCount('sections')
-            ->ordered()
-            ->get();
+        $grades = Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
+            return GradeLevel::withCount('sections')
+                ->ordered()
+                ->get();
+        });
 
         return response()->json($grades);
     }
@@ -27,6 +32,7 @@ class GradeLevelController extends Controller
         ]);
 
         $grade = GradeLevel::create($data);
+        Cache::forget(self::CACHE_KEY);
 
         return response()->json($grade, 201);
     }
@@ -46,6 +52,7 @@ class GradeLevelController extends Controller
         ]);
 
         $gradeLevel->update($data);
+        Cache::forget(self::CACHE_KEY);
 
         return response()->json($gradeLevel);
     }
@@ -53,6 +60,7 @@ class GradeLevelController extends Controller
     public function activate(GradeLevel $gradeLevel): JsonResponse
     {
         $gradeLevel->update(['is_active' => true]);
+        Cache::forget(self::CACHE_KEY);
 
         return response()->json(['message' => "{$gradeLevel->name} activated."]);
     }
@@ -62,6 +70,7 @@ class GradeLevelController extends Controller
         $gradeLevel->update(['is_active' => false]);
 
         $gradeLevel->sections()->update(['is_active' => false]);
+        Cache::forget(self::CACHE_KEY);
 
         return response()->json(['message' => "{$gradeLevel->name} and its sections deactivated."]);
     }
@@ -75,6 +84,7 @@ class GradeLevelController extends Controller
         }
 
         $gradeLevel->delete();
+        Cache::forget(self::CACHE_KEY);
 
         return response()->json(['message' => "{$gradeLevel->name} deleted."]);
     }

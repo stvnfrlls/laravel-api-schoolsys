@@ -7,10 +7,25 @@ use App\Models\GradeLevel;
 use App\Models\Subject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class SubjectController extends Controller
 {
+    const CACHE_TTL = 1800; // 30 minutes
+
+    private function indexCacheKey(Request $request): string
+    {
+        $params = [
+            'status' => $request->input('status', 'all'),
+            'grade_level_id' => $request->input('grade_level_id', 'all'),
+            'per_page' => $request->input('per_page', 15),
+            'page' => $request->input('page', 1),
+        ];
+
+        return 'subjects.index.' . md5(serialize($params));
+    }
+
     public function index(Request $request): JsonResponse
     {
         $request->validate([
@@ -19,15 +34,17 @@ class SubjectController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $subjects = Subject::with('gradeLevels')
-            ->when($request->status === 'active', fn($q) => $q->active())
-            ->when($request->status === 'inactive', fn($q) => $q->inactive())
-            ->when($request->grade_level_id, fn($q) => $q->whereHas(
-                'gradeLevels',
-                fn($q) => $q->where('grade_level_id', $request->grade_level_id)
-            ))
-            ->orderBy('name')
-            ->paginate($request->input('per_page', 15));
+        $subjects = Cache::remember($this->indexCacheKey($request), self::CACHE_TTL, function () use ($request) {
+            return Subject::with('gradeLevels')
+                ->when($request->status === 'active', fn($q) => $q->active())
+                ->when($request->status === 'inactive', fn($q) => $q->inactive())
+                ->when($request->grade_level_id, fn($q) => $q->whereHas(
+                    'gradeLevels',
+                    fn($q) => $q->where('grade_level_id', $request->grade_level_id)
+                ))
+                ->orderBy('name')
+                ->paginate($request->input('per_page', 15));
+        });
 
         return response()->json($subjects);
     }
@@ -53,11 +70,10 @@ class SubjectController extends Controller
         ];
 
         foreach ($defaults as $component) {
-            $subject->gradingComponents()->create([
-                ...$component,
-                'is_active' => true,
-            ]);
+            $subject->gradingComponents()->create([...$component, 'is_active' => true]);
         }
+
+        $this->clearCache();
 
         return response()->json($subject, 201);
     }
@@ -79,7 +95,6 @@ class SubjectController extends Controller
         if (isset($data['code'])) {
             $data['code'] = strtoupper($data['code']);
 
-            // Ignore current subject ID
             if (
                 Subject::whereRaw('UPPER(code) = ?', [$data['code']])
                     ->where('id', '!=', $subject->id)
@@ -90,6 +105,7 @@ class SubjectController extends Controller
         }
 
         $subject->update($data);
+        $this->clearCache();
 
         return response()->json($subject->fresh());
     }
@@ -103,6 +119,7 @@ class SubjectController extends Controller
         }
 
         $subject->delete();
+        $this->clearCache();
 
         return response()->json(['message' => 'Subject deleted successfully.']);
     }
@@ -110,6 +127,7 @@ class SubjectController extends Controller
     public function activate(Subject $subject): JsonResponse
     {
         $subject->activate();
+        $this->clearCache();
 
         return response()->json($subject->fresh());
     }
@@ -117,6 +135,7 @@ class SubjectController extends Controller
     public function deactivate(Subject $subject): JsonResponse
     {
         $subject->deactivate();
+        $this->clearCache();
 
         return response()->json($subject->fresh());
     }
@@ -142,13 +161,26 @@ class SubjectController extends Controller
             ],
         ]);
 
+        $this->clearCache();
+
         return response()->json($subject->load('gradeLevels'));
     }
 
     public function removeFromGradeLevel(Subject $subject, GradeLevel $gradeLevel): JsonResponse
     {
         $subject->gradeLevels()->detach($gradeLevel->id);
+        $this->clearCache();
 
         return response()->json(['message' => "Subject removed from {$gradeLevel->name}."]);
+    }
+
+    // Clears all subject index cache keys by tag pattern
+    private function clearCache(): void
+    {
+        // Database cache doesn't support tags, so we flush all subject index keys
+        // by iterating the cache table — acceptable for a low-volume portfolio project
+        \DB::table('cache')
+            ->where('key', 'like', '%subjects.index.%')
+            ->delete();
     }
 }
