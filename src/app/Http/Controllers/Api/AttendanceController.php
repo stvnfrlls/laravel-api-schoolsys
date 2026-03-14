@@ -138,7 +138,7 @@ class AttendanceController extends Controller
             ->selectRaw('enrollment_id, COUNT(*) as absence_count')
             ->pluck('absence_count', 'enrollment_id'); // keyed by enrollment_id
 
-        $enrollments = Enrollment::with(['student', 'section'])
+        $enrollments = Enrollment::with(['student', 'gradeLevel', 'section'])
             ->whereIn('id', $flaggedEnrollmentIds)
             ->get()
             ->map(function ($enrollment) use ($absenceCounts) {
