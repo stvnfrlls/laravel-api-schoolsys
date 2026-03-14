@@ -47,6 +47,8 @@ class SubjectController extends Controller
                 ->paginate($request->input('per_page', 15));
         });
 
+        $subjects->load('gradeLevels');
+
         return SubjectResource::collection($subjects);
     }
 
@@ -81,6 +83,7 @@ class SubjectController extends Controller
 
     public function show(Subject $subject): JsonResponse
     {
+        $subject->load(['gradeLevels', 'gradingComponents']);
         return response()->json(new SubjectResource($subject));
     }
 
@@ -178,10 +181,10 @@ class SubjectController extends Controller
     // Clears all subject index cache keys by tag pattern
     private function clearCache(): void
     {
-        // Database cache doesn't support tags, so we flush all subject index keys
-        // by iterating the cache table — acceptable for a low-volume portfolio project
+        $prefix = config('cache.prefix');
+
         \DB::table('cache')
-            ->where('key', 'like', '%subjects.index.%')
+            ->where('key', 'like', $prefix . 'subjects.index.%')
             ->delete();
     }
 }

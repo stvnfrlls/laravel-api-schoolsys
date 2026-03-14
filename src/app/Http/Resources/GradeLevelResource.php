@@ -16,6 +16,13 @@ class GradeLevelResource extends JsonResource
             'is_active' => $this->is_active,
             'sections_count' => $this->whenNotNull($this->sections_count),
             'sections' => SectionResource::collection($this->whenLoaded('sections')),
+            'pivot' => $this->when(
+                $this->pivot !== null,
+                fn() => [
+                    'units' => $this->pivot->units,
+                    'hours_per_week' => $this->pivot->hours_per_week,
+                ]
+            ),
         ];
     }
 }

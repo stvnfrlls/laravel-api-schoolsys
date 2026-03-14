@@ -191,8 +191,10 @@ class StudentController extends Controller
 
     private function clearCache(): void
     {
+        $prefix = config('cache.prefix');
+
         \DB::table('cache')
-            ->where('key', 'like', '%students.index.page.%')
+            ->where('key', 'like', $prefix . 'students.index.page.%')
             ->delete();
     }
 }

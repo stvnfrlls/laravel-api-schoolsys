@@ -185,8 +185,10 @@ class ScheduleController extends Controller
 
     private function clearCache(): void
     {
+        $prefix = config('cache.prefix');
+
         \DB::table('cache')
-            ->where('key', 'like', '%schedules.index.%')
+            ->where('key', 'like', $prefix . 'schedules.index.%')
             ->delete();
     }
 }

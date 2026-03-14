@@ -81,6 +81,11 @@ class UserController extends Controller
                     'school_year' => $data['school_year'],
                     'semester' => $data['semester'],
                 ]);
+
+                $prefix = config('cache.prefix');
+                \DB::table('cache')
+                    ->where('key', 'like', $prefix . 'students.index.page.%')
+                    ->delete();
             }
 
             if ($roleName === 'faculty') {
@@ -94,6 +99,11 @@ class UserController extends Controller
                     'gender' => $data['gender'],
                     'specialization' => $data['specialization'] ?? null,
                 ]);
+
+                $prefix = config('cache.prefix');
+                \DB::table('cache')
+                    ->where('key', 'like', $prefix . 'teachers.index.page.%')
+                    ->delete();
             }
         }
 
