@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\StudentGradeController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\GradeLevelController;
+use App\Http\Controllers\Api\QuarterController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\SectionController;
 use App\Http\Controllers\Api\StudentController;
@@ -59,6 +60,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance/flagged', [AttendanceController::class, 'flagged']);
     Route::get('/attendance/summary/{enrollment}', [AttendanceController::class, 'summary']);
     Route::get('/attendance/{attendance}', [AttendanceController::class, 'show']);
+
+    Route::get('/quarter', [QuarterController::class, 'currentQuarter']);
 });
 
 // -------------------------------------------------------------------------
@@ -125,6 +128,8 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
 
     Route::post('/attendance', [AttendanceController::class, 'store']);
     Route::put('/attendance/{attendance}', [AttendanceController::class, 'update']);
+
+    Route::put('/quarter', [QuarterController::class, 'updateQuarter']);
 });
 
 // -------------------------------------------------------------------------
