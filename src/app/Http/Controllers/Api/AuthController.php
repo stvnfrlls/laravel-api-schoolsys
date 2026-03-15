@@ -32,12 +32,13 @@ class AuthController extends Controller
         }
 
         $user->tokens()->delete();
-
-        $token = $user->createToken('api-token', ['api'], now()->addHours(1))->plainTextToken;
+        $expiresAt = now()->addHours(1);
+        $token = $user->createToken('api-token', ['api'], $expiresAt)->plainTextToken;
 
         return response()->json([
             'token' => $token,
             'user' => new UserResource($user),
+            'expiresIn' => $expiresAt->diffInSeconds(now()),
         ]);
     }
 
