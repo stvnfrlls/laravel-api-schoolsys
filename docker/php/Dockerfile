@@ -35,7 +35,8 @@ COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Copy entrypoint script
 COPY docker/php/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r//' /entrypoint.sh \
+    && chmod +x /entrypoint.sh
 
 WORKDIR /var/www
 
