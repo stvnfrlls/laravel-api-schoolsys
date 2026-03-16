@@ -1,12 +1,9 @@
 #!/bin/sh
 set -e
 
-if [ "$APP_ENV" = "local" ]; then
-    echo ">>> Local environment, installing with dev dependencies..."
+if [ ! -f "/var/www/vendor/autoload.php" ]; then
+    echo ">>> vendor/autoload.php not found, installing Composer dependencies..."
     composer install --optimize-autoloader --no-interaction
-elif [ ! -d "/var/www/vendor" ]; then
-    echo ">>> vendor/ not found, installing Composer dependencies..."
-    composer install --no-dev --optimize-autoloader --no-interaction
 else
     echo ">>> vendor/ already exists, skipping composer install..."
 fi
