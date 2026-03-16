@@ -109,6 +109,67 @@ A comprehensive system to manage roles, users, curriculum, enrollment, grading, 
 
 ---
 
+## In-Progress
+
+## 1. Student Performance Dashboard
+- View academic performance, grades, attendance, and upcoming exams/tests
+- Graphs and charts to illustrate performance trends
+
+## 2. Homework and Assignments Management
+- Create, manage, and submit homework assignments
+- Assign due dates and deadlines
+- Track submission and provide feedback
+
+## 3. Notifications and Reminders
+- Send notifications via email and SMS
+- Implement a reminder system for important events
+
+## 4. Parent Portal
+- View child's academic performance, attendance, and assignments
+- Messaging system for communication with teachers
+- Sign-off forms and documents
+
+## 5. School News and Announcements
+- Post news, announcements, and updates
+- Categorization of news for easy filtering and search
+
+## 6. Fee Management and Payment Tracking
+- Manage school fees and payments
+- Track payment status and generate invoices
+- Online payment and receipt generation
+
+## 7. Report Cards and Transcripts
+- Generate and manage report cards and transcripts
+- Custom formatting and design options
+- Export reports in PDF or Excel format
+
+## 8. Library Management
+- Manage book inventory, borrowing records, and reservations
+- Search, borrow, and return books
+- Generate reports and summaries
+
+## 9. Calendar and Scheduling
+- Customizable calendar for teachers and staff
+- Schedule appointments, meetings, and events
+- Integrate with scheduling system
+
+## 10. Health and Wellness Tracking
+- Track health records, vaccination status, and emergency contacts
+- Access and update health records
+- Emergency notification system
+
+## 11. Transport Management
+- Manage school transportation schedules, routes, and passenger lists
+- View bus schedule and route
+- Implement a tracking system
+
+## 12. Event Management
+- Manage school events, including field trips, sports days, and other activities
+- Register, schedule, and communicate with participants
+- Generate event reports and summaries
+
+---
+
 ## 11. Docker Setup
 
 ### Prerequisites
@@ -135,8 +196,8 @@ Make sure the following are installed on your machine before proceeding:
 #### 1. Clone the Repository
 
 ```bash
-git clone <your-repository-url>
-cd <your-project-folder>
+git clone https://github.com/stvnfrlls/laravel-api-schoolsys.git
+cd laravel-api-schoolsys
 ```
 
 #### 2. Create the Environment File
@@ -172,13 +233,17 @@ docker compose ps
 
 All three containers should have a status of `running`.
 
-#### 5. Access the Services
+#### 5. Run Composer Install
 
-| Service   | URL                   |
-|-----------|-----------------------|
-| API / App | http://localhost:8000 |
-| Adminer   | http://localhost:8080 |
+```bash
+docker exec schoolsys_api_app composer install --optimize-autoloader --no-interaction
+```
 
+#### 6. Generate App Key
+
+```bash
+docker exec schoolsys_api_app php artisan key:generate
+```
 ---
 
 ### Useful Commands
