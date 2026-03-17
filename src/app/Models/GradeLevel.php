@@ -50,4 +50,9 @@ class GradeLevel extends Model
     {
         return $this->subjects()->where('is_active', true);
     }
+
+    public function assignment(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
+    }
 }

@@ -65,4 +65,9 @@ class Subject extends Model
     {
         return $this->hasMany(GradingComponent::class);
     }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
+    }
 }
