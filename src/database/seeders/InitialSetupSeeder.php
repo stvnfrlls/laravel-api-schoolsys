@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Assignment;
+use App\Models\AssignmentDetail;
 use App\Models\Enrollment;
 use Illuminate\Database\Seeder;
 use App\Models\Role;
@@ -167,6 +169,89 @@ class InitialSetupSeeder extends Seeder
         //         'school_year' => '2023-2024',
         //         'semester' => '1st',
         //         'status' => 'active',
+        //     ]);
+        // }
+
+        // -------------------
+        // 8. Create Assignments
+        // -------------------
+        // $teacher = Teacher::first();
+        // $subjects = Subject::all();
+
+        // Create assignments for each subject
+        // foreach ($subjects as $subject) {
+        //     $gradeLevels = $subject->gradeLevels;
+
+        //     // Assignment 1
+        //     $assignment1 = Assignment::create([
+        //         'gradelevel_id' => $gradeLevel->id,
+        //         'subject_id' => $subject->id,
+        //         'teacher_id' => $teacher->id,
+        //         'title' => 'Chapter 5 Exercises',
+        //         'total_points' => 100,
+        //         'due_date' => now()->addDays(7),
+        //         'is_published' => true,
+        //     ]);
+
+        //     AssignmentDetail::create([
+        //         'assignment_id' => $assignment1->id,
+        //         'description' => 'Complete all exercises from Chapter 5',
+        //         'instructions' => json_encode([
+        //             ['type' => 'text', 'content' => 'Follow these instructions carefully:'],
+        //             ['type' => 'bullet', 'content' => 'Read Chapter 5 pages 100-150'],
+        //             ['type' => 'bullet', 'content' => 'Answer all questions at the end of the chapter'],
+        //             ['type' => 'bullet', 'content' => 'Show all your work'],
+        //             ['type' => 'bullet', 'content' => 'Box your final answers'],
+        //             ['type' => 'text', 'content' => 'Submit your work before the due date.'],
+        //         ]),
+        //     ]);
+
+        //     // Assignment 2
+        //     $assignment2 = Assignment::create([
+        //         'gradelevel_id' => $gradeLevel->id,
+        //         'subject_id' => $subject->id,
+        //         'teacher_id' => $teacher->id,
+        //         'title' => 'Quiz - Midterm Review',
+        //         'total_points' => 50,
+        //         'due_date' => now()->addDays(14),
+        //         'is_published' => true,
+        //     ]);
+
+        //     AssignmentDetail::create([
+        //         'assignment_id' => $assignment2->id,
+        //         'description' => 'Midterm quiz review covering chapters 1-5',
+        //         'instructions' => json_encode([
+        //             ['type' => 'heading', 'content' => 'Quiz Instructions'],
+        //             ['type' => 'bullet', 'content' => 'Answer all 25 multiple choice questions'],
+        //             ['type' => 'bullet', 'content' => 'You have 1 hour to complete the quiz'],
+        //             ['type' => 'bullet', 'content' => 'No external resources allowed'],
+        //             ['type' => 'text', 'content' => 'Good luck!'],
+        //         ]),
+        //     ]);
+
+        //     // Assignment 3 (unpublished)
+        //     $assignment3 = Assignment::create([
+        //         'gradelevel_id' => $gradeLevel->id,
+        //         'subject_id' => $subject->id,
+        //         'teacher_id' => $teacher->id,
+        //         'title' => 'Final Project',
+        //         'total_points' => 200,
+        //         'due_date' => now()->addDays(30),
+        //         'is_published' => false,
+        //     ]);
+
+        //     AssignmentDetail::create([
+        //         'assignment_id' => $assignment3->id,
+        //         'description' => 'Final comprehensive project (draft - not published yet)',
+        //         'instructions' => json_encode([
+        //             ['type' => 'heading', 'content' => 'Project Overview'],
+        //             ['type' => 'text', 'content' => 'This is a comprehensive project that covers all material from the semester.'],
+        //             ['type' => 'heading', 'content' => 'Requirements'],
+        //             ['type' => 'bullet', 'content' => 'Create a 10-15 page report'],
+        //             ['type' => 'bullet', 'content' => 'Include at least 5 credible sources'],
+        //             ['type' => 'bullet', 'content' => 'Follow APA format'],
+        //             ['type' => 'bullet', 'content' => 'Include original analysis and insights'],
+        //         ]),
         //     ]);
         // }
     }

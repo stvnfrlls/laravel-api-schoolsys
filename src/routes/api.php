@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\AssignmentController;
+use App\Http\Controllers\Api\AssignmentDetailController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EnrollmentController;
@@ -86,6 +88,17 @@ Route::middleware(['auth:sanctum', 'role:faculty'])->group(function () {
 
     Route::get('/teacher/schedule', [TeacherController::class, 'mySchedule']);
     Route::get('/teacher/subjects', [TeacherController::class, 'mySubjects']);
+
+    Route::get('/assignments', [AssignmentController::class, 'index']);
+    Route::post('/assignments', [AssignmentController::class, 'store']);
+    Route::put('/assignments/{assignment}', [AssignmentController::class, 'update']);
+    Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
+    
+    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
+    Route::patch('/assignments/{assignment}/publish', [AssignmentController::class, 'togglePublish']);
+
+    Route::get('/assignments/{assignment}/details', [AssignmentDetailController::class, 'show']);
+    Route::put('/assignments/{assignment}/details', [AssignmentDetailController::class, 'update']);
 });
 
 // -------------------------------------------------------------------------
@@ -130,6 +143,17 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
     Route::put('/attendance/{attendance}', [AttendanceController::class, 'update']);
 
     Route::put('/quarter', [QuarterController::class, 'updateQuarter']);
+
+    Route::get('/assignments', [AssignmentController::class, 'index']);
+    Route::post('/assignments', [AssignmentController::class, 'store']);
+    Route::put('/assignments/{assignment}', [AssignmentController::class, 'update']);
+    Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
+    
+    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
+    Route::patch('/assignments/{assignment}/publish', [AssignmentController::class, 'togglePublish']);
+
+    Route::get('/assignments/{assignment}/details', [AssignmentDetailController::class, 'show']);
+    Route::put('/assignments/{assignment}/details', [AssignmentDetailController::class, 'update']);
 });
 
 // -------------------------------------------------------------------------
