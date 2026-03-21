@@ -37,7 +37,7 @@ class ScheduleTest extends TestCase
             'section_id' => Section::factory()->create()->id,
             'subject_id' => Subject::factory()->create()->id,
             'teacher_id' => $this->makeTeacher()->id,
-            'day' => 'monday',
+            'days' => ['monday'],
             'start_time' => '08:00',
             'end_time' => '09:00',
             'school_year' => '2025-2026',
@@ -56,9 +56,9 @@ class ScheduleTest extends TestCase
         $this->actingAsRole('admin')
             ->postJson('/api/schedules', $payload)
             ->assertCreated()
-            ->assertJsonPath('day', 'monday')
-            ->assertJsonPath('start_time', '08:00')
-            ->assertJsonPath('end_time', '09:00');
+            ->assertJsonPath('0.day', 'monday')
+            ->assertJsonPath('0.start_time', '08:00')
+            ->assertJsonPath('0.end_time', '09:00');
     }
 
     public function test_sub_admin_can_create_a_schedule(): void
@@ -105,7 +105,7 @@ class ScheduleTest extends TestCase
     public function test_weekend_days_are_rejected(): void
     {
         $this->actingAsRole('admin')
-            ->postJson('/api/schedules', $this->schedulePayload(['day' => 'saturday']))
+            ->postJson('/api/schedules', $this->schedulePayload(['days' => ['saturday']]))
             ->assertUnprocessable();
     }
 
@@ -138,7 +138,7 @@ class ScheduleTest extends TestCase
                 'section_id' => $section->id,
                 'subject_id' => Subject::factory()->create()->id,
                 'teacher_id' => $teacher2->id,
-                'day' => 'monday',
+                'days' => ['monday'],
                 'start_time' => '08:30',   // overlaps
                 'end_time' => '09:30',
                 'school_year' => '2025-2026',
@@ -168,7 +168,7 @@ class ScheduleTest extends TestCase
                 'section_id' => Section::factory()->create()->id,
                 'subject_id' => Subject::factory()->create()->id,
                 'teacher_id' => $teacher->id,
-                'day' => 'monday',
+                'days' => ['monday'],
                 'start_time' => '08:30',   // overlaps
                 'end_time' => '09:30',
                 'school_year' => '2025-2026',
@@ -194,7 +194,7 @@ class ScheduleTest extends TestCase
         $this->actingAsRole('admin')
             ->postJson('/api/schedules', $this->schedulePayload([
                 'teacher_id' => $teacher->id,
-                'day' => 'tuesday',     // different day — no conflict
+                'days' => ['tuesday'],     // different day — no conflict
                 'start_time' => '08:00',
                 'end_time' => '09:00',
                 'school_year' => '2025-2026',
@@ -219,7 +219,7 @@ class ScheduleTest extends TestCase
         $this->actingAsRole('admin')
             ->postJson('/api/schedules', $this->schedulePayload([
                 'teacher_id' => $teacher->id,
-                'day' => 'monday',
+                'days' => ['monday'],
                 'start_time' => '09:00',   // starts exactly when the other ends — no overlap
                 'end_time' => '10:00',
                 'school_year' => '2025-2026',
@@ -244,7 +244,7 @@ class ScheduleTest extends TestCase
         $this->actingAsRole('admin')
             ->postJson('/api/schedules', $this->schedulePayload([
                 'teacher_id' => $teacher->id,
-                'day' => 'monday',
+                'days' => ['monday'],
                 'start_time' => '08:00',
                 'end_time' => '09:00',
                 'school_year' => '2025-2026',
@@ -317,7 +317,7 @@ class ScheduleTest extends TestCase
         $section = Section::factory()->create();
         $teacher = $this->makeTeacher();
 
-        $existing = Schedule::factory()->create([
+        Schedule::factory()->create([
             'section_id' => $section->id,
             'teacher_id' => $teacher->id,
             'day' => 'monday',

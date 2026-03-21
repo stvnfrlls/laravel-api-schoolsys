@@ -14,13 +14,13 @@ use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
 
-    public function index(): JsonResponse
+    public function index()
     {
         $users = User::with(['roles:id,name', 'student', 'teacher'])
             ->latest()
             ->paginate(20);
 
-        return response()->json(UserResource::collection($users));
+        return UserResource::collection($users);
     }
 
     public function store(Request $request)
@@ -126,13 +126,17 @@ class UserController extends Controller
     public function update(Request $request, User $user): JsonResponse
     {
         $data = $request->validate([
-            'name' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
+            'name'     => ['sometimes', 'nullable', 'string', 'max:255'],
+            'email'    => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => ['sometimes', 'string', 'min:8'],
+            'role'     => ['sometimes', 'integer', 'exists:roles,id'],
         ]);
 
         if (isset($data['password'])) {
             $data['password'] = Hash::make($data['password']);
+        }
+        if (isset($data['role'])) {
+            $user->roles()->sync([$data['role']]);
         }
 
         $user->update($data);

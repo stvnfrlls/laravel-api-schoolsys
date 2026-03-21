@@ -43,7 +43,7 @@ class SubjectController extends Controller
                     'gradeLevels',
                     fn($q) => $q->where('grade_level_id', $request->grade_level_id)
                 ))
-                ->orderBy('name')
+                ->orderBy('id', 'desc')
                 ->paginate($request->input('per_page', 15));
         });
 
