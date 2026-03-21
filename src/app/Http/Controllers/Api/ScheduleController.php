@@ -37,7 +37,7 @@ class ScheduleController extends Controller
         $key = $this->indexCacheKey($request);
 
         $schedules = Cache::remember($key, self::CACHE_TTL, function () use ($request) {
-            $query = Schedule::with(['section', 'subject', 'teacher']);
+            $query = Schedule::with(['section.gradeLevel', 'subject', 'teacher']);
 
             if ($request->filled('section_id'))
                 $query->where('section_id', $request->section_id);
@@ -52,7 +52,7 @@ class ScheduleController extends Controller
             if ($request->filled('semester'))
                 $query->where('semester', $request->semester);
 
-            return $query->orderBy('day')->orderBy('start_time')->paginate(20);
+            return $query->orderBy('id', 'desc')->orderBy('start_time')->paginate(20);
         });
 
         return ScheduleResource::collection($schedules);
@@ -65,7 +65,8 @@ class ScheduleController extends Controller
             'section_id' => ['required', 'exists:sections,id'],
             'subject_id' => ['required', 'exists:subjects,id'],
             'teacher_id' => ['required', 'exists:users,id'],
-            'day' => ['required', Rule::in(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])],
+            'days' => ['required', 'array', 'min:1'],
+            'days.*' => ['required', Rule::in(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'school_year' => ['required', 'string', 'regex:/^\d{4}-\d{4}$/'],
@@ -79,14 +80,21 @@ class ScheduleController extends Controller
             ], 422);
         }
 
-        if ($conflict = $this->detectConflict($data)) {
-            return response()->json(['message' => $conflict], 422);
+        $base = collect($data)->except('days')->toArray();
+
+        foreach ($data['days'] as $day) {
+            if ($conflict = $this->detectConflict(array_merge($base, ['day' => $day]))) {
+                return response()->json(['message' => $conflict], 422);
+            }
         }
 
-        $schedule = Schedule::create($data);
+        $schedules = collect($data['days'])->map(
+            fn($day) => Schedule::create(array_merge($base, ['day' => $day]))
+        );
+
         $this->clearCache();
 
-        return response()->json(new ScheduleResource($schedule->load(['section', 'subject', 'teacher'])), 201);
+        return response()->json(ScheduleResource::collection($schedules->map(fn($s) => $s->load(['section', 'subject', 'teacher']))), 201);
     }
 
     // GET /schedules/{schedule}

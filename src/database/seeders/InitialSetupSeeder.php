@@ -43,12 +43,12 @@ class InitialSetupSeeder extends Seeder
         // 2. Create Grade Levels
         // -------------------
         $gradeLevels = [
-            ['name' => 'Grade 7', 'level' => 7],
-            ['name' => 'Grade 8', 'level' => 8],
-            ['name' => 'Grade 9', 'level' => 9],
-            ['name' => 'Grade 10', 'level' => 10],
-            ['name' => 'Grade 11', 'level' => 11],
-            ['name' => 'Grade 12', 'level' => 12],
+            ['name' => 'Grade 1', 'level' => 1],
+            ['name' => 'Grade 2', 'level' => 2],
+            ['name' => 'Grade 3', 'level' => 3],
+            ['name' => 'Grade 4', 'level' => 4],
+            ['name' => 'Grade 5', 'level' => 5],
+            ['name' => 'Grade 6', 'level' => 6],
         ];
 
         $gradeLevelInstances = [];
@@ -63,7 +63,7 @@ class InitialSetupSeeder extends Seeder
         // 3. Create Sections
         // -------------------
         foreach ($gradeLevelInstances as $gradeLevel) {
-            foreach (['A', 'B', 'C'] as $sectionLetter) {
+            foreach (['1', '2'] as $sectionLetter) {
                 Section::firstOrCreate([
                     'grade_level_id' => $gradeLevel->id,
                     'name' => 'Section ' . $sectionLetter,
