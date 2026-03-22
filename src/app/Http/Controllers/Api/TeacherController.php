@@ -59,57 +59,10 @@ class TeacherController extends Controller
         return response()->json(new TeacherResource($teacher->fresh('user')));
     }
 
-    // ---------------------------------------------------------------
-    // Teacher self-service routes — no caching, always real-time
-    // ---------------------------------------------------------------
-
-    // GET /api/teacher/schedule
-    public function mySchedule(Request $request): JsonResponse
+    public function myProfile(Request $request): JsonResponse
     {
-        $query = Schedule::with(['subject', 'section.gradeLevel'])
-            ->where('teacher_id', $request->user()->id);
-
-        if ($request->filled('school_year')) {
-            $query->where('school_year', $request->school_year);
-        }
-
-        if ($request->filled('semester')) {
-            $query->where('semester', $request->semester);
-        }
-
-        if ($request->filled('day')) {
-            $query->forDay($request->day);
-        }
-
-        return response()->json(ScheduleResource::collection($query->orderBy('day')->orderBy('start_time')->get()));
-    }
-
-    // GET /api/teacher/subjects
-    public function mySubjects(Request $request): JsonResponse
-    {
-        $schedules = Schedule::with(['subject', 'section.gradeLevel'])
-            ->where('teacher_id', $request->user()->id);
-
-        if ($request->filled('school_year')) {
-            $schedules->where('school_year', $request->school_year);
-        }
-
-        if ($request->filled('semester')) {
-            $schedules->where('semester', $request->semester);
-        }
-
-        $grouped = $schedules->get()
-            ->groupBy('subject_id')
-            ->map(function ($rows) {
-                $first = $rows->first();
-                return [
-                    'subject' => $first->subject,
-                    'sections' => $rows->pluck('section')->unique('id')->values(),
-                ];
-            })
-            ->values();
-
-        return response()->json($grouped);
+        $teacher = Teacher::where('user_id', $request->user()->id)->firstOrFail();
+        return response()->json(new TeacherResource($teacher));
     }
 
     private function clearCache(): void

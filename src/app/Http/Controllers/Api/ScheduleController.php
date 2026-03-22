@@ -171,6 +171,35 @@ class ScheduleController extends Controller
         return response()->json(ScheduleResource::collection($query->orderBy('day')->orderBy('start_time')->get()));
     }
 
+    // GET /teacher/schedule
+    public function mySchedule(Request $request): JsonResponse
+    {
+        $query = Schedule::with(['subject', 'section.gradeLevel'])
+            ->where('teacher_id', $request->user()->id);
+
+        if ($request->filled('school_year')) {
+            $query->where('school_year', $request->school_year);
+        }
+
+        if ($request->filled('semester')) {
+            $query->where('semester', $request->semester);
+        }
+
+        if ($request->filled('day')) {
+            $query->forDay($request->day);
+        }
+
+        return response()->json(ScheduleResource::collection($query->orderBy('day')->orderBy('start_time')->get()));
+    }
+
+    public function mySection(Request $request): JsonResponse
+    {
+        $query = Schedule::with(['subject', 'section.gradeLevel'])
+            ->where('teacher_id', $request->user()->id);
+            
+        return response()->json(ScheduleResource::collection($query->orderBy('day')->orderBy('start_time')->get()));
+    }
+
     private function detectConflict(array $data, ?int $excludeId = null): ?string
     {
         $base = Schedule::where('day', $data['day'])

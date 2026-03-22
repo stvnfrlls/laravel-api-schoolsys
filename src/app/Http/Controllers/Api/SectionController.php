@@ -132,6 +132,17 @@ class SectionController extends Controller
         return response()->json(['message' => "{$section->name} deleted."]);
     }
 
+    public function mySection(Request $request): JsonResponse
+    {
+        $sections = Section::with('gradeLevel')
+            ->whereHas('schedules', fn($q) => $q->where('teacher_id', $request->user()->id))
+            ->orderBy('grade_level_id')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json(SectionResource::collection($sections));
+    }
+
     private function clearCache(int $gradeLevelId): void
     {
         Cache::forget($this->cacheKey());               // clear full list
