@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SubjectResource;
 use App\Models\GradeLevel;
+use App\Models\Schedule;
 use App\Models\Subject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -101,8 +102,8 @@ class SubjectController extends Controller
 
             if (
                 Subject::whereRaw('UPPER(code) = ?', [$data['code']])
-                    ->where('id', '!=', $subject->id)
-                    ->exists()
+                ->where('id', '!=', $subject->id)
+                ->exists()
             ) {
                 return response()->json(['errors' => ['code' => ['The code has already been taken.']]], 422);
             }
@@ -176,6 +177,33 @@ class SubjectController extends Controller
         $this->clearCache();
 
         return response()->json(['message' => "Subject removed from {$gradeLevel->name}."]);
+    }
+
+    public function mySubjects(Request $request): JsonResponse
+    {
+        $schedules = Schedule::with(['subject', 'section.gradeLevel'])
+            ->where('teacher_id', $request->user()->id);
+
+        if ($request->filled('school_year')) {
+            $schedules->where('school_year', $request->school_year);
+        }
+
+        if ($request->filled('semester')) {
+            $schedules->where('semester', $request->semester);
+        }
+
+        $grouped = $schedules->get()
+            ->groupBy('subject_id')
+            ->map(function ($rows) {
+                $first = $rows->first();
+                return [
+                    'subject' => $first->subject,
+                    'sections' => $rows->pluck('section')->unique('id')->values(),
+                ];
+            })
+            ->values();
+
+        return response()->json($grouped);
     }
 
     // Clears all subject index cache keys by tag pattern

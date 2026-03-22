@@ -74,6 +74,8 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
     Route::get('/student/schedule', [StudentController::class, 'mySchedule']);
     Route::get('/student/grades', [StudentController::class, 'myGrades']);
     Route::get('/student/attendance', [StudentController::class, 'myAttendance']);
+
+    Route::get('/student-assignments', [AssignmentController::class, 'index']);
 });
 
 // -------------------------------------------------------------------------
@@ -86,16 +88,18 @@ Route::middleware(['auth:sanctum', 'role:faculty'])->group(function () {
     Route::post('/attendance', [AttendanceController::class, 'store']);
     Route::put('/attendance/{attendance}', [AttendanceController::class, 'update']);
 
-    Route::get('/teacher/schedule', [TeacherController::class, 'mySchedule']);
-    Route::get('/teacher/subjects', [TeacherController::class, 'mySubjects']);
+    Route::get('/teacher/schedule', [ScheduleController::class, 'mySchedule']);
+    Route::get('/teacher/subjects', [SubjectController::class, 'mySubjects']);
+    Route::get('/teacher/sections', [SectionController::class, 'mySection']);
+    Route::get('/teacher/profile', [TeacherController::class, 'myProfile']);
 
-    Route::get('/assignments', [AssignmentController::class, 'index']);
-    Route::post('/assignments', [AssignmentController::class, 'store']);
-    Route::put('/assignments/{assignment}', [AssignmentController::class, 'update']);
+    Route::get('/faculty-assignments', [AssignmentController::class, 'index']);
+    Route::post('/faculty-assignments', [AssignmentController::class, 'store']);
+    Route::put('/faculty-assignments/{assignment}', [AssignmentController::class, 'update']);
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
-    
+
     Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
-    Route::patch('/assignments/{assignment}/publish', [AssignmentController::class, 'togglePublish']);
+    Route::patch('/faculty/assignments/{assignment}/publish', [AssignmentController::class, 'togglePublish']);
 
     Route::get('/assignments/{assignment}/details', [AssignmentDetailController::class, 'show']);
     Route::put('/assignments/{assignment}/details', [AssignmentDetailController::class, 'update']);
@@ -148,7 +152,7 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
     Route::post('/assignments', [AssignmentController::class, 'store']);
     Route::put('/assignments/{assignment}', [AssignmentController::class, 'update']);
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
-    
+
     Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
     Route::patch('/assignments/{assignment}/publish', [AssignmentController::class, 'togglePublish']);
 

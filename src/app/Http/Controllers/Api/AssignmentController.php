@@ -14,9 +14,18 @@ class AssignmentController extends Controller
 {
     public function index(): JsonResponse
     {
-        $assignment = Assignment::with(['details', 'teacher:id,first_name,last_name', 'subject:id,name,code', 'gradeLevel:id,name,level'])
-            ->orderBy('id', 'desc')
-            ->paginate(15);
+        $user = auth()->user();
+
+        $assignment = Assignment::with(['details', 'teacher:id,first_name,last_name', 'subject:id,name,code', 'gradeLevel:id,name,level']);
+
+        if ($user->hasRole('faculty')) {
+            $assignment->where('teacher_id', $user->teacher->id);
+        } else if ($user->hasRole('student')) {
+            $assignment->where('gradelevel_id', $user->student->id)
+                ->where('is_published', 1);
+        }
+
+        $assignment = $assignment->orderBy('created_at', 'desc')->paginate(15);
 
         return response()->json($assignment);
     }
@@ -99,12 +108,12 @@ class AssignmentController extends Controller
             "title" => $data["title"],
             "total_points" => $data["total_points"],
             "due_date" => $data["due_date"],
-            "is_published" => $data["is_published"] ?? $assignment->is_published,
+            "is_published" => $data["is_published"],
         ]);
 
         $assignment->details()->update([
-            "description" => $data["description"] ?? $assignment->details->description,
-            "instructions" => $data["instructions"] ?? $assignment->details->instructions,
+            "description" => $data["description"],
+            "instructions" => $data["instructions"],
         ]);
 
         return response()->json([
