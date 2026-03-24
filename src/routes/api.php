@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\AssignmentController;
 use App\Http\Controllers\Api\AssignmentDetailController;
+use App\Http\Controllers\Api\AssignmentQuestionController;
+use App\Http\Controllers\Api\AssignmentSubmissionController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EnrollmentController;
@@ -64,6 +66,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/attendance/{attendance}', [AttendanceController::class, 'show']);
 
     Route::get('/quarter', [QuarterController::class, 'currentQuarter']);
+    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
+    Route::get('/assignments/{assignment}/submissions/my', [AssignmentSubmissionController::class, 'getMySubmission']);
+    Route::get('/assignments/{assignment}/questions', [AssignmentQuestionController::class, 'index']);
 });
 
 // -------------------------------------------------------------------------
@@ -98,7 +103,6 @@ Route::middleware(['auth:sanctum', 'role:faculty'])->group(function () {
     Route::put('/faculty-assignments/{assignment}', [AssignmentController::class, 'update']);
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
 
-    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
     Route::patch('/faculty/assignments/{assignment}/publish', [AssignmentController::class, 'togglePublish']);
 
     Route::get('/assignments/{assignment}/details', [AssignmentDetailController::class, 'show']);
@@ -153,7 +157,6 @@ Route::middleware(['auth:sanctum', 'role:sub-admin,admin'])->group(function () {
     Route::put('/assignments/{assignment}', [AssignmentController::class, 'update']);
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'destroy']);
 
-    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show']);
     Route::patch('/assignments/{assignment}/publish', [AssignmentController::class, 'togglePublish']);
 
     Route::get('/assignments/{assignment}/details', [AssignmentDetailController::class, 'show']);
@@ -203,4 +206,29 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     Route::delete('/student-grades/{studentGrade}', [StudentGradeController::class, 'destroy']);
     Route::delete('/attendance/{attendance}', [AttendanceController::class, 'destroy']);
+});
+// Assignment questions & submissions (faculty + admin access)
+Route::middleware(['auth:sanctum', 'role:faculty,sub-admin,admin'])->group(function () {
+    Route::prefix('assignments/{assignment}')->group(function () {
+        Route::post('questions', [AssignmentQuestionController::class, 'store']);
+        Route::put('questions/{question}', [AssignmentQuestionController::class, 'update']);
+        Route::delete('questions/{question}', [AssignmentQuestionController::class, 'destroy']);
+        Route::post('questions/reorder', [AssignmentQuestionController::class, 'reorder']);
+
+        Route::get('submissions', [AssignmentSubmissionController::class, 'index']);
+        Route::get('submissions/summary', [AssignmentSubmissionController::class, 'getSummary']);
+        Route::get('submissions/{submission}', [AssignmentSubmissionController::class, 'show']);
+        Route::post('submissions/{submission}/grade', [AssignmentSubmissionController::class, 'gradeAnswers']);
+        Route::post('submissions/{submission}/push', [AssignmentSubmissionController::class, 'pushToGradebook']);
+    });
+});
+
+// Assignment questions & submissions (student access)
+Route::middleware(['auth:sanctum', 'role:student'])->group(function () {
+    Route::prefix('assignments/{assignment}')->group(function () {
+        Route::get('submissions/my', [AssignmentSubmissionController::class, 'getMySubmission']);
+        Route::post('submissions/draft', [AssignmentSubmissionController::class, 'saveDraft']);
+        Route::post('submissions/submit', [AssignmentSubmissionController::class, 'submit']);
+        Route::post('submissions/resubmit', [AssignmentSubmissionController::class, 'resubmit']);
+    });
 });
