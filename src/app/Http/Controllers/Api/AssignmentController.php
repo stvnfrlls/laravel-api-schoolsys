@@ -32,7 +32,13 @@ class AssignmentController extends Controller
 
     public function show(Assignment $assignment): JsonResponse
     {
-        $assignment = $assignment->load(['details', 'teacher:id, first_name, last_name', 'subject:id, name', 'gradeLevel:id,name,level']);
+        $assignment = $assignment->load([
+            'details',
+            'teacher:id,first_name,last_name',
+            'subject:id,name',
+            'gradeLevel:id,name,level',
+            'gradingComponent:id,name,code,weight',
+        ]);
 
         return response()->json([
             'data' => [
@@ -47,79 +53,85 @@ class AssignmentController extends Controller
                     'description' => $assignment->details?->description,
                     'instructions' => json_decode($assignment->details?->instructions ?? '[]', true),
                 ],
+                'quarter' => $assignment->quarter,
                 'created_at' => $assignment->created_at,
             ],
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            "gradelevel_id" => ["required", "exists:grade_levels,id"],
-            "subject_id" => ["required", "exists:subjects,id"],
-            "teacher_id" => ["required", "exists:teachers,id"],
-            "title" => ["required", "string", "max:255"],
-            "total_points" => ["required", "integer", "min:1"],
-            "due_date" => ["required", "date_format:Y-m-d H:i:s"],
-            "description" => ["nullable", "string"],
-            "instructions" => ["nullable"],
-            "is_published" => ["nullable", "boolean"],
+            'gradelevel_id'          => ['required', 'exists:grade_levels,id'],
+            'subject_id'             => ['required', 'exists:subjects,id'],
+            'teacher_id'             => ['required', 'exists:teachers,id'],
+            'grading_component_id'   => ['nullable', 'exists:grading_components,id'],
+            'quarter'                => ['nullable', 'integer', 'between:1,4'],
+            'title'                  => ['required', 'string', 'max:255'],
+            'total_points'           => ['required', 'integer', 'min:1'],
+            'due_date'               => ['required', 'date_format:Y-m-d H:i:s'],
+            'description'            => ['nullable', 'string'],
+            'is_published'           => ['nullable', 'boolean'],
         ]);
 
         $assignment = Assignment::create([
-            "gradelevel_id" => $data["gradelevel_id"],
-            "subject_id" => $data["subject_id"],
-            "teacher_id" => $data["teacher_id"],
-            "title" => $data["title"],
-            "total_points" => $data["total_points"],
-            "due_date" => $data["due_date"],
-            "is_published" => $data["is_published"] ?? false,
+            'gradelevel_id'        => $data['gradelevel_id'],
+            'subject_id'           => $data['subject_id'],
+            'teacher_id'           => $data['teacher_id'],
+            'grading_component_id' => $data['grading_component_id'] ?? null,
+            'quarter'              => $data['quarter'] ?? null,
+            'title'                => $data['title'],
+            'total_points'         => $data['total_points'],
+            'due_date'             => $data['due_date'],
+            'is_published'         => $data['is_published'] ?? false,
         ]);
 
         $assignment->details()->create([
-            "description" => $data["description"] ?? null,
-            "instructions" => $data["instructions"] ?? null,
+            'description' => $data['description'] ?? null,
         ]);
 
         return response()->json([
-            'data' => $assignment->load("details")->toArray(),
+            'data'    => $assignment->load('details')->toArray(),
             'message' => 'Assignment created successfully!',
-        ]);
+        ], 201);
     }
 
     public function update(Request $request, Assignment $assignment): JsonResponse
     {
         $data = $request->validate([
-            "gradelevel_id" => ["required", "exists:grade_levels,id"],
-            "subject_id" => ["required", "exists:subjects,id"],
-            "teacher_id" => ["required", "exists:teachers,id"],
-            "title" => ["required", "string", "max:255"],
-            "total_points" => ["required", "integer", "min:1"],
-            "due_date" => ["required", "date_format:Y-m-d H:i:s"],
-            "description" => ["nullable", "string"],
-            "instructions" => ["nullable"],
-            "is_published" => ["nullable", "boolean"],
+            'gradelevel_id'        => ['required', 'exists:grade_levels,id'],
+            'subject_id'           => ['required', 'exists:subjects,id'],
+            'teacher_id'           => ['required', 'exists:teachers,id'],
+            'grading_component_id' => ['nullable', 'exists:grading_components,id'],
+            'quarter'              => ['nullable', 'integer', 'between:1,4'],
+            'title'                => ['required', 'string', 'max:255'],
+            'total_points'         => ['required', 'integer', 'min:1'],
+            'due_date'             => ['required', 'date_format:Y-m-d H:i:s'],
+            'description'          => ['nullable', 'string'],
+            'is_published'         => ['nullable', 'boolean'],
         ]);
 
         $assignment->update([
-            "gradelevel_id" => $data["gradelevel_id"],
-            "subject_id" => $data["subject_id"],
-            "teacher_id" => $data["teacher_id"],
-            "title" => $data["title"],
-            "total_points" => $data["total_points"],
-            "due_date" => $data["due_date"],
-            "is_published" => $data["is_published"],
+            'gradelevel_id'        => $data['gradelevel_id'],
+            'subject_id'           => $data['subject_id'],
+            'teacher_id'           => $data['teacher_id'],
+            'grading_component_id' => $data['grading_component_id'] ?? null,
+            'quarter'              => $data['quarter'] ?? null,
+            'title'                => $data['title'],
+            'total_points'         => $data['total_points'],
+            'due_date'             => $data['due_date'],
+            'is_published'         => $data['is_published'],
         ]);
 
-        $assignment->details()->update([
-            "description" => $data["description"],
-            "instructions" => $data["instructions"],
-        ]);
+        $assignment->details()->updateOrCreate(
+            ['assignment_id' => $assignment->id],
+            ['description'   => $data['description'] ?? null]
+        );
 
         return response()->json([
             'success' => true,
             'message' => 'Assignment updated successfully!',
-            'data' => $assignment->fresh()->load("details")->toArray(),
+            'data'    => $assignment->fresh()->load('details')->toArray(),
         ]);
     }
 

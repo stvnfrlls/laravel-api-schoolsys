@@ -20,11 +20,14 @@ class Assignment extends Model
         'total_points',
         'due_date',
         'is_published',
+        'grading_component_id',
+        'quarter',
     ];
 
     protected $casts = [
         'due_date' => 'datetime',
         'is_published' => 'boolean',
+        'quarter' => 'integer',
     ];
 
     public function subject(): BelongsTo
@@ -50,5 +53,15 @@ class Assignment extends Model
     public function gradeLevel(): BelongsTo
     {
         return $this->belongsTo(GradeLevel::class, 'gradelevel_id');
+    }
+
+    public function gradingComponent(): BelongsTo
+    {
+        return $this->belongsTo(GradingComponent::class);
+    }
+
+    public function questions(): HasMany
+    {
+        return $this->hasMany(AssignmentQuestion::class)->orderBy('order');
     }
 }

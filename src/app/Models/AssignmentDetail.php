@@ -10,7 +10,6 @@ class AssignmentDetail extends Model
     protected $fillable = [
         'assignment_id',
         'description',
-        'instructions',
     ];
 
     protected $hidden = [

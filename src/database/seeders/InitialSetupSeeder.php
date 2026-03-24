@@ -27,7 +27,6 @@ class InitialSetupSeeder extends Seeder
         $roles = [
             ['name' => 'unassigned', 'description' => 'No specific role assigned'],
             ['name' => 'admin', 'description' => 'Full access to all resources'],
-            ['name' => 'sub-admin', 'description' => 'Limited admin access'],
             ['name' => 'faculty', 'description' => 'Access to faculty resources'],
             ['name' => 'student', 'description' => 'Access to student resources'],
         ];
@@ -79,7 +78,6 @@ class InitialSetupSeeder extends Seeder
         // 4. Fetch Role Instances
         // -------------------
         $adminRole = Role::where('name', 'admin')->first();
-        $subAdminRole = Role::where('name', 'sub-admin')->first();
         $facultyRole = Role::where('name', 'faculty')->first();
         $studentRole = Role::where('name', 'student')->first();
 
@@ -93,12 +91,6 @@ class InitialSetupSeeder extends Seeder
             'password' => bcrypt('password'),
         ]);
         $adminUser->roles()->attach($adminRole->id);
-
-        // 2 Sub-Admins
-        $subAdminUsers = User::factory()->count(2)->create();
-        foreach ($subAdminUsers as $user) {
-            $user->roles()->attach($subAdminRole->id);
-        }
 
         // 10 Faculty
         // User::factory()
